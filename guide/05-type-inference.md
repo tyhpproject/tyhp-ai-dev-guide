@@ -7,10 +7,11 @@ The checker infers where it safely can, but **types are mandatory in most positi
 | Parameter (function/method) | **Type required** — untyped → error. |
 | Property, class const | **Type required.** |
 | Return type | **Required.** |
-| Local `T $x = …` | Explicit type wins. |
-| Local `$x = expr` (no type) | Inferred from `expr`. If not inferable → error `TYHP4016`. |
+| Local `$x = expr` (no type) | **Primary form.** Inferred from `expr`. If not inferable → error `TYHP4016`. |
+| Local `T $x = …` | Explicit type wins — use when inference is not enough. |
 | Local `$x;` (no type, no init) | Error `TYHP4016`. |
-| Closure/`fn` params | Explicit type, **or** inferred from the expected `callable<…>`/`\Closure<…>` at the call site; no context → `TYHP4138`. |
+| Closure/`fn` params | Explicit type, **or** inferred from the expected `callable(...)`/`\Closure<callable(...)>` at the call site; no context → `TYHP4138`. |
+| Generator `: \Generator` | Infer `\Generator<K,V,S,R>` from `yield` / `send` / `return` in the body. Two-arg form pins K/V. |
 
 Inference specifics:
 - Scalar literals infer as **literal types** (`$x = 5` ⇒ type `5`, assignable to `int`); `int $x = 5`

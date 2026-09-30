@@ -1,4 +1,4 @@
-## 20. Property accessors (= PHP 8.4 property hooks; compile straight through)
+## 20. Property accessors (= PHP 8.4 property hooks)
 
 ```tyhp
 class Temperature {
@@ -9,5 +9,24 @@ class Temperature {
     }
 }
 ```
-Write them exactly like PHP 8.4+ property hooks. ⚠️ They're currently emitted verbatim, so target
-`output.phpVersion` ≥ 8.4 for now; automatic < 8.4 downlevel is planned.
+
+Write them in `.tyhp` exactly like PHP 8.4+ property hooks (`get` / `set` / `&get`, `final`, hook
+visibility). On `output.phpVersion` ≥ 8.4 the compiler emits native hooks. On 8.2–8.3 it lowers the
+same source through a polyfill. `&get` requires 8.4 (`TYHP4167`).
+
+### `.tyhpdef`
+
+Describe a hooked PHP property with a **bodyless** list. Bodies stay in `.tyhp`.
+
+```tyhpdef
+<?tyhpdef
+class Holder {
+    public string $hooked { get; set; }
+    public int $hookedCount { get; }
+    public array $refItems { &get; set; }
+    public string $name { get; private set; }
+}
+```
+
+One `$name` per hooked declaration. `#[\Tyhp\Php]` goes on the property or `declare(php=…)`, not on
+`get`/`set` (`TYHP8016`).

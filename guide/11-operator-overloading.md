@@ -1,6 +1,6 @@
 ## 11. Operator overloading
 
-Define in a `class`/`enum` body (or `extension`, [§12](12-extensions.md)).
+Define in a `class`/`enum` body. An `extension` operator uses the block target ([§12](12-extensions.md)): `operator + (self $left, self $right)` inside `extension E extends Money`, where `self` is `Money`.
 ```tyhp
 class Money {
     public int $amount = 0;
@@ -65,4 +65,4 @@ Convert-to target → auto-added interface (merged with existing `implements`):
 **Tyhpdef exception — native passthrough:** a bodyless `operator +(…): T;` on a tyhpdef class
 (no `extension` keyword) means the PHP type already supports the operator. The checker still
 types `$a + $b`, but the emitter **does not** rewrite it. Mapped overloads use
-`extension operator` **with a body** (see [§23](23-tyhpdef.md) / `tyhpdef_classes`).
+`extension operator` **with a `=>` expression** (see [§23](23-tyhpdef.md)).

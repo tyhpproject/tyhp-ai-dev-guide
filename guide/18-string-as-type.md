@@ -2,8 +2,8 @@
 
 **Symbol-name types** — typed strings naming real symbols: `__ClassName __EnumName __InterfaceName
 __TraitName __FunctionName __StructName __ConstName __VarName __TypedVarName<T> __PropertyName<T>
-__MethodName<T> __ObjectConstName<T> __EnumCaseName<T> __CompatibleTypeName<T>`. They narrow through
-existence checks and verify literal assignment at compile time:
+__MethodName<T> __ObjectConstName<T> __EnumCaseName<T> __CompatibleTypeName<T> __SuperTypeName<T>`.
+They narrow through existence checks and verify literal assignment at compile time:
 ```tyhp
 if (\class_exists($n)) { /* $n: __ClassName */ }
 if (\method_exists($o, $n)) { /* $n: __MethodName<typeof($o)> */ }

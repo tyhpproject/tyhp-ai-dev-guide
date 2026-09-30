@@ -1,7 +1,7 @@
 # Tyhp for PHP developers — language guide for AI agents
 
-> Read before editing a `.tyhp` codebase. You know PHP 8.x. Tyhp is a **statically-typed PHP superset
-> that compiles to plain PHP**. This is the *delta only*; anything unmentioned behaves like PHP.
+> Read before editing a `.tyhp` codebase. You know PHP 8.x. Tyhp is a **typed superset of
+> the PHP language that compiles to PHP**. This is the *delta only*; anything unmentioned behaves like PHP.
 > `→` means "compiles to". ⚠️ = doesn't compile cleanly yet — use the PHP form (see [§28](28-availability-gotchas.md)).
 > (Any `NN|` prefixes you see are your reader's line numbers, not Tyhp syntax.)
 > For project setup, the CLI/build workflow, PHP interop, testing, worked examples, and full runtime
@@ -38,3 +38,4 @@
 - `27-diagnostics.md` — diagnostics
 - `28-availability-gotchas.md` — availability gotchas
 - `29-php-mapping.md` — php mapping
+- `30-php-version-gating.md` — php version gating

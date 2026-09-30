@@ -1,9 +1,9 @@
 ## 2. Autoloading & running the output
 
 - **Automatic:** set `build.updateComposer: true`. After a successful build the compiler writes/merges
-  `composer.json` **in the output dir** with `autoload.psr-4` (your `psr4` config + mappings derived
-  from emitted classes), `autoload.files` (every `*_functions.php`), and `require` entries for the
-  runtime packages you used — wired via Composer **path repositories** to `runtime/packages/` (`@dev`,
+  `composer.json` **in `output.publishPath`** (default: the project root) with `autoload.psr-4` (your `psr4` config + mappings derived
+  from emitted classes, relative to that `composer.json`), `autoload.files` (every `*_functions.php`), and `require` entries for the
+  runtime packages you used — wired via Composer **path repositories** to a sibling `tyhp-runtime-src/packages/` (`@dev`,
   `minimum-stability: dev`). It then runs `composer install`. If `updateComposer` is false, the build
   just logs which packages you need.
 - **Manual:** point your own `composer.json` `autoload.psr-4` at the output segments (e.g.

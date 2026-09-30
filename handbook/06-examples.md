@@ -4,11 +4,11 @@
 ```tyhp
 <?tyhp
 namespace App\Money;
-extension MoneyText {
-    function format(extends Money $this, string $currency): string {   // `extends T $this` = receiver
+extension MoneyText extends Money {
+    function format(string $currency): string {
         return $currency . ' ' . $this->amount;
     }
-    operator +<Money>(self $left, self $right): Money {                 // target type in <>
+    operator + (self $left, self $right): Money {
         return new Money($left->amount + $right->amount);
     }
 }
@@ -51,7 +51,7 @@ disposal only warns on failure — use `using` when you need dispose errors to p
 
 **`with` on a struct (only the `new` form compiles today):**
 ```tyhp
-struct Config { bool $enabled = true; string $name = ''; }
+type Config = struct { bool $enabled = true; string $name = ''; };
 Config $base = new Config() with [name => 'base', enabled => true];   // → ['name'=>'base','enabled'=>true]
 // To "update", build a new value (clone/in-place struct `with` doesn't compile yet):
 Config $off  = new Config() with [name => $base->name, enabled => false];

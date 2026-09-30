@@ -1,11 +1,11 @@
 ## 10. Structs
 
 Structural value type = "typed associative array": **typed properties only, no methods**, → PHP
-`array`.
+`array`. PHP callers see `array`; there is no runtime shape check.
 
 ```tyhp
-struct Point { int $x = 0; int $y = 0; ?string $label; }   // nullable prop may omit default
-struct ColoredPoint extends Point { string $color = 'red'; }
+type Point = struct { int $x = 0; int $y = 0; ?string $label; };   // nullable prop may omit default
+type ColoredPoint = struct extends Point { string $color = 'red'; };
 ```
 
 | | `struct` | `class` |

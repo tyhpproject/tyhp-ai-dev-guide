@@ -13,5 +13,7 @@
 - **Variance:** user generic parameters are **invariant** (no `in`/`out` keywords exist), with one
   carve-out: `G<T>` is assignable to `G<mixed>` when `T` is neither `void` nor `never` (heterogeneous
   bags such as `PropertyAccessor<mixed>`). Built-in `array<…>`/`iterable<…>` args are covariant;
-  `callable<…>` is **contravariant in params, covariant in return**. `Promise<T>`, user classes:
+  `callable(...)` is **contravariant in params, covariant in return**. `\Closure<C, This, Scope>`
+  assigns to `callable` / `C` via `__invoke`. `TThis` / `TScope` are **invariant**. Untyped
+  `callable` is not assignable to `\Closure<…>`. `Promise<T>`, user classes:
   otherwise invariant (`G<string>` ↛ `G<int>`).

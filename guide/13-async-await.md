@@ -29,3 +29,5 @@ function fetchCount(): \Tyhp\Promise {
   - `Promise<AsyncIterable<T>>` → await then async-iterate; key-value uses `currentKey()`/`currentValue()`
 - Application entry points with top-level `await` wrap in `\Tyhp\Promise::run(function() { … });`
   (library projects skip). Async closures/arrows emit as Promise-returning anonymous functions.
+- Blocking PHP I/O (`\file_get_contents()`, PDO, curl without async wrappers) blocks the
+  `tyhp/async` event loop; other fibers wait until the call returns.

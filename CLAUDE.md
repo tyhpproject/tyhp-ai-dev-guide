@@ -1,6 +1,6 @@
 # Writing Tyhp in this project
 
-This project uses **Tyhp** (PHP 8.x plus static typing and a few additions). The full agent
+This project uses **Tyhp** (a typed superset of the PHP language). The full agent
 instructions live in **`AGENTS.md`** in this folder — read it first.
 
 Quick orientation:
