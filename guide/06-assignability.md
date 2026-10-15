@@ -12,7 +12,9 @@
 - **Structs** use width subtyping ([§10](10-structs.md)). `mixed` = top, `never` = bottom, any object → `object`.
 - **Variance:** user generic parameters are **invariant** (no `in`/`out` keywords exist), with one
   carve-out: `G<T>` is assignable to `G<mixed>` when `T` is neither `void` nor `never` (heterogeneous
-  bags such as `PropertyAccessor<mixed>`). Built-in `array<…>`/`iterable<…>` args are covariant;
+  bags such as `PropertyAccessor<mixed>`). A raw generic (`Box` with no type args) is `Box<mixed>` (each
+  parameter widened to its `extends` bound) when assigned to an instantiation of the same class: `Box` ↛
+  `Box<int>`, `Box<int>` → `Box` ([§7](07-generics.md)). Built-in `array<…>`/`iterable<…>` args are covariant;
   `callable(...)` is **contravariant in params, covariant in return**. `\Closure<C, This, Scope>`
   assigns to `callable` / `C` via `__invoke`. `TThis` / `TScope` are **invariant**. Untyped
   `callable` is not assignable to `\Closure<…>`. `Promise<T>`, user classes:

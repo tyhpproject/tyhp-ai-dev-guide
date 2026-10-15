@@ -15,12 +15,23 @@ underlines; `--quiet` is one line. Unknown names may include a **did you mean**.
 | `TYHP4016` | variable needs a type annotation or inferable initializer |
 | `TYHP4021` | assign to `readonly` property |
 | `TYHP4025` | member visibility violation |
-| `TYHP4030` | `:=` requires a type implementing `IsDisposable` |
+| `TYHP4028` | `await` / `using await` outside async code |
+| `TYHP3031`–`TYHP3036` | overload signatures: no implementation / not adjacent / lone (`3033`, warning) / duplicate / modifier mismatch / constructor |
+| `TYHP4030` | Resource of `:=`, `using` or `using await` requires a type implementing `IsDisposable` |
+| `TYHP4035` | type argument does not satisfy constraint (a `mixed` argument fails any bound other than `mixed`) |
+| `TYHP4118` | overload signature not compatible with the implementation |
+| `TYHP4160` | `mixed` must be narrowed before this use |
+| `TYHP4181` | erased (`=>`) extension member call cannot be spliced faithfully |
+| `TYHP4373` | `Promise<T>` / `extends __Awaited<…>` type argument is not settled (promise, promise-bearing union, or unconstrained `T`) |
+| `TYHP4374` | no overload accepts the call, even with implicit `operator convert` conversions (first declared signature accepting it as written wins) |
+| `TYHP4375` | ambiguous overload: several signatures accept the call only through implicit conversions to different types — convert an argument explicitly |
+| `TYHP4376` | a first-class callable of an overload set cannot convert an argument at one position: the overloads convert that type to different targets — call the overload directly |
 | `TYHP4031` | property doesn't exist on type (e.g. in `with`) |
 | `TYHP4032` | type-guard function must return `bool` |
 | `TYHP4036` | wrong number of generic arguments |
 | `TYHP4037` | struct property must be typed / required |
 | `TYHP4043` | condition must be `bool` |
+| `TYHP4101` | method/property not declared on the receiver's class, interface, or `object` type (also: extension not in scope in this file) |
 | `TYHP4121` | empty `catch` swallows exceptions — name `$e` and `(void)$e` to discard on purpose |
 | `TYHP4138` | can't infer closure parameter type — annotate it |
 | `TYHP4139` | readonly `clone … with` on PHP &lt; 8.5 without `build.experimentalReadonlyCloneWith` |
@@ -46,6 +57,7 @@ underlines; `--quiet` is one line. Unknown names may include a **did you mean**.
 | `TYHP7702` | `tyhp/compiler` missing from root require-dev (`--strict` fails) |
 | `TYHP7703` | root `composer.json` parse/write failed during extras sync |
 
-There is currently **no dedicated "unknown member" or "wrong argument count" error** — an unresolved
-member/call infers internal `unresolved`, which is assignable both ways. Don't rely on the checker
-for those.
+A call to a method or a read of a property that a fully-known class, interface, or `object` receiver
+does not declare is `TYHP4101` (not reported when the class has `__get` / `__call` / `__callStatic`, part of
+its ancestry is unresolved, or the name is dynamic; a `\property_exists` / `\method_exists` guard with a
+literal name makes the member known). Passing too many arguments is `TYHP4143`.

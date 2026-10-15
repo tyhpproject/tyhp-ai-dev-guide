@@ -5,7 +5,10 @@
   standard library comes from `tyhpdef/php`; optional extensions from `tyhpdef/php-ext-*`
   (`require` `ext-*` on that package is the `declare(ext="…")` signal). Polyfill-only symbols are
   `declare(ext="!name")` plus `fallback function` / `fallback const` ([§23](23-tyhpdef.md)).
-- Namespaces, `use`, FQCN (`\A\B\C`), and `use function`/`use const` **resolve like PHP**. Constant
+- Namespaces, `use`, FQCN (`\A\B\C`), and `use function`/`use const` **resolve like PHP**; a `use const`
+  name is always rooted at the global namespace (`use const Demo\Util\LIMIT;` → `\Demo\Util\LIMIT` even in
+  `namespace Demo;`). Source file-level `const X = 5;` is untyped (an annotation is an error) and reads as the
+  widened literal type (`int`). Constant
   names are case-sensitive and matched before the case-insensitive class/function index. PHP allows
   a class and a nested namespace to share an FQN (`class \Ns\Foo` plus types under `\Ns\Foo\…`);
   inherited members still resolve from that parent. In type position, `\Ns\Foo\Bar` is a class-level

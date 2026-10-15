@@ -3,7 +3,7 @@
 **Use freely:** typed locals; generics (pass all type args); top-level `type` aliases; structs;
 operator overloads; extensions (`$x->m()` + `use extension`); **`tyhp/core` scalar catalog**
 (`$s->length()`, `$arr->mapped(...)` — no per-file import); `async`/`await`; `using`/`:=`;
-guards + narrowing; `nameof`/`default(T)`/`typeof`/`variable_exists`; `decimal` hints; symbol-name
+guards + narrowing; `nameof`/`default(T)`/`typeof`/`variable_exists`; `decimal` (operators, `(decimal)` casts); symbol-name
 and template string types; property hooks (polyfill on 8.2–8.3, native on 8.4+; `&get` needs 8.4); `with` on structs **and**
 classes; `declare(php=…)` / `#[\Tyhp\Php]` / `#[\Tyhp\PhpType]`; `declare(ext="name")` /
 `declare(ext="!name")`; `fallback function` / `fallback const`; `internal` (omitted from
@@ -17,7 +17,6 @@ initializers (including array literals).
 
 | Not | Use |
 |-----|-----|
-| `(decimal) $x` | `\Tyhp\decimal($x)` |
 | in-place `$obj with […]` on `readonly` | `clone $obj with […]` or `new … with` |
 | `&get` property hook when `output.phpVersion` &lt; `8.4` | by-value `get`, or raise the target to 8.4 |
 | member/class-scoped or generic `type` aliases | a top-level non-generic `type` |

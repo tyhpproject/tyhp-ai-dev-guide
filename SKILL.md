@@ -30,9 +30,9 @@ of what's available, read `guide/00-index.md` and `handbook/00-index.md` (or lis
 - **Inference limits** — literals infer, but annotate arrays (`array<int> $xs = [...]`); an untyped call result is `mixed`. `→ guide/05-type-inference.md`
 
 ## Types
-- **`decimal`** — arbitrary-precision decimal, like C# `decimal` / Java `BigDecimal`. Write values with `\Tyhp\decimal('19.99')` (⚠️ avoid the `(decimal)` cast). `→ guide/04-type-system.md`
+- **`decimal`** — arbitrary-precision decimal, like C# `decimal` / Java `BigDecimal`. Write values with `\Tyhp\decimal('19.99')` or `(decimal) $stringIntOrFloat`, and use the operators (`$price * 3`, `$a > $b`, `$sum += $x`), not `->multiply()`/`->greaterThan()`. `→ guide/04-type-system.md`
 - **Literal types** — `'GET'|'POST'`, `42` used as types, like TS literal/union types. `→ guide/04-type-system.md`
-- **Generics** — `class Box<T extends X = Def>`, like C#/TS generics. Pass all type args explicitly. `→ guide/07-generics.md`
+- **Generics** — `class Box<T extends X = Def>`, like C#/TS generics. Pass all type args explicitly; bare `Box` is `Box<mixed>` when assigned to an instantiation (`Box` ↛ `Box<int>`, `Box<int>` → `Box`). `→ guide/07-generics.md`
 - **Generic collection types** — `array<K,V>`, `iterable<T>`, `callable(A, B): R`; `callable(...): R` as an `extends` bound. `\Closure<callable(A, B): R>` (class). `→ guide/07-generics.md`
 - **Type aliases** — `type Id = int;` like TS `type`; `Id()` / `typeof(Id)` is a `\Tyhp\Type` factory. `→ guide/09-type-aliases.md`
 - **Structs** — value type with typed properties only; **structural** compatibility like TS/Go (vs nominal classes). `→ guide/10-structs.md`
@@ -40,7 +40,7 @@ of what's available, read `guide/00-index.md` and `handbook/00-index.md` (or lis
 - **String-as-type** — symbol-name types (`__ClassName`) and template string types (`"api/${string}"`), like TS template-literal types. `→ guide/18-string-as-type.md`
 
 ## Behavior / expressions
-- **async / await** — like C#/JS; cancel via `CancellationToken`. `→ guide/13-async-await.md, handbook/07-runtime-api.md`
+- **async / await** — like C#/JS; the declared return type of an `async` callable is the settled type (`async function f(): int` → `Promise<int>` call, `int` awaited; `__Awaited<T>`; `Promise<T>` needs `T extends __Awaited<void|mixed>`, TYHP4373); cancel via `CancellationToken` (also ends `Promise::run`/`EventLoop::run`). `→ guide/13-async-await.md, handbook/07-runtime-api.md`
 - **using / disposables / `:=`** — like C# `using` + `IDisposable`; `$x := new R()` = scope-disposed local (C# `using` declaration / Go `defer`-ish). `→ guide/14-disposal.md`
 - **`with` expressions** — object `with` mutates identity; struct `with` rebinds an array (same as passing an object vs an array into a PHP function). `new Point() with [x => 1]` / `clone $obj with […]`. (Readonly `clone … with` on PHP &lt; 8.5 needs a config flag.) `→ guide/15-with-expressions.md`
 - **Operator overloading** — like C# `operator +`, declared in the class/extension body (incl. `convert`). `→ guide/11-operator-overloading.md`
@@ -52,7 +52,7 @@ of what's available, read `guide/00-index.md` and `handbook/00-index.md` (or lis
 
 ## Declarations (deltas vs PHP)
 - **Constructor return type / chaining** — constructors declare `: void`, or `: parent(<args>)` to call the base ctor (like C#/Java `: base(...)`). `→ guide/22-declarations.md`
-- **Method overload signatures** — bodiless signature declarations, like TS/C# overloads. `→ guide/22-declarations.md`
+- **Function/method overload signatures** — bodiless `function`/method signatures followed by one implementation, like TS overloads; callers see only the signatures and the **first** one accepting the call as written wins (only if none does, signatures are retried with implicit `operator convert`; conversions to different types in several signatures are `TYHP4375`; `TYHP4374` if none); `f(...)` of a function with a convertible parameter is a wrapper closure that accepts the convertible types (`$fn = takeMoney(...); $fn(5)`; per-position for overload sets, `TYHP4376` if ambiguous; not widened for `callable(...)`-typed variables or closures); `TYHP3031`–`3036`, `4118`. `→ guide/22-declarations.md`
 - **Trait property alias** — Tyhp adds `use T { $prop as $renamed; }` (PHP only aliases methods). `→ guide/22-declarations.md`
 - **`internal` modifier** — omit from published `package.tyhpdef` (like C#/TS `internal` at the package boundary). `→ guide/22-declarations.md`
 - **PHP version gates** — `declare(php=">=8.4")` / `#[\Tyhp\Php(">=8.4")]` (`output.phpVersion` is the minimum PHP; gates true for only some versions emit `\PHP_VERSION_ID` checks). `declare(ext="name")` / `fallback function` / `fallback const` (also in `.tyhp`). `→ guide/30-php-version-gating.md, guide/23-tyhpdef.md`

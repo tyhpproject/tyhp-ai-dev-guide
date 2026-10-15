@@ -20,5 +20,10 @@ Point $p = new Point();            // → ['x'=>0,'y'=>0]
 $p->x                              // → $p['x']
 new Point() with [x => 1, y => 2]  // → ['x'=>1,'y'=>2]
 ```
-Anonymous `new struct {…}` and `clone` on a struct both work (`clone` is a no-op for
-array-backed structs; `clone … with` uses `\array_replace`).
+Structs are always plain PHP associative arrays at runtime. Nested struct defaults
+(`Inner $inner = new Inner();`) fold into the outer array literal.
+
+Anonymous `struct { … }` types (and `new struct {…}`) support the same operations as named structs:
+property access and writes, `with`, `clone … with`, `isset`, `??`, and `as` key aliases. `clone` is a
+no-op for a struct; `clone … with` uses `\array_replace`. A statement `$p with […];` (variable or
+property target) emits `$p = \array_replace($p, […]);`.

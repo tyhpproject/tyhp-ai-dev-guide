@@ -81,7 +81,7 @@ async function fetchAll(array<string> $urls, CancellationToken $token): array<st
 function run(array<string> $urls): array<string> {
     $cts = new \Tyhp\CancellationTokenSource(5000);        // auto-cancel after 5s
     try {
-        return \Tyhp\Promise::run(fn() => fetchAll($urls, $cts->getToken()), $cts->getToken());
+        return \Tyhp\Promise::run(async fn(): array<string> => await fetchAll($urls, $cts->getToken()), $cts->getToken());
     } catch (\Tyhp\Exceptions\OperationCancelledException $e) {
         return [];
     } finally {

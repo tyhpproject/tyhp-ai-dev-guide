@@ -11,14 +11,34 @@ class Repo<T> extends Base<T> implements Query<T> {}   // generic args on extend
 ```
 - Omitted trailing type args use declared defaults (`Box` with `T = string` → `Box<string>`;
   partial `MyMap<int>` with `TValue = mixed` → `MyMap<int, mixed>`). Resolution order at call
-  sites remains explicit → inference → defaults.
-- Arg count must match; each arg is checked against its `extends` constraint.
+  sites remains explicit → inference → the expected type of the call → defaults.
+  A literal argument infers the widened type (`'plain'` → `string`, `1` → `int`,
+  `true` → `bool`). Elements of `array<Cell<T>>` or `Cell<T> ...` merge
+  (`Cell<int>` and `Cell<string>` → `T = int|string`). A union parameter
+  `null|T|Box<T>` rejects a union argument that has a member matching no arm
+  (`TYHP4010`). No argument binding, no expected type, and no default is
+  `TYHP4377` (`Cannot infer type argument `T` for `make`. Specify it explicitly`).
+- Arg count must match; each arg is checked against its `extends` constraint. A partial list
+  (`Pair<int>` for `Pair<T, U>`) is `TYHP4036`.
+- **Raw generic** (class named with no type args, no defaults, e.g. `Box`): when it is the **source**
+  of an assignment/argument/return to an instantiation of the same class it is `Box<mixed>`, with each
+  parameter widened to its declared `extends` bound (`mixed` if none). So `Box` → `Box<int>` is an error
+  (`TYHP4008`/`4009`/`4010`), `Box<int>` → `Box` and `Box` → `Box<mixed>` are fine. A member read
+  through a raw receiver uses that same widened bound (`mixed`, or the `extends` bound). Bounds apply
+  even if the class is declared later, in another file, or in a PHP stub/tyhpdef; `T extends Node<T>`
+  is valid. A redundant `instanceof` keeps the precise instantiation (`Box<int>|null` + `instanceof Box`
+  stays `Box<int>`); `instanceof Box` on a `mixed` value yields the raw `Box`. Bare `\Closure` stays
+  assignable to any `\Closure<…>`.
 - Erasure: `Box<int>` → `Box`; unconstrained `T` acts like `mixed`, `T extends Foo` like `Foo`;
   `array<…>`/`iterable<…>`/`callable(...)` → bare `array`/`iterable`/`callable`;
   `\Closure<…>`/`\Fiber<…>`/`\Generator<…>` → `\Closure`/`\Fiber`/`\Generator`.
   Compiled Tyhp libraries stamp `#[\Tyhp\GenericRuntime(erased:, layouts: [1])]` on every emitted
   generic class/method/function (`factory`/`binder` only when helpers exist). Same-compilation
   tracked sites keep those helpers; foreign tyhpdef stamps always emit `\Tyhp\Generic::bind(...)(...)`.
+  A first-class callable of a generic function (`f(...)`, `f<string>(...)`) with a convertible parameter is
+  emitted as `\Tyhp\Generic::wrapCallable(<native f(...) or its binder call>, <converting factory>)`;
+  `\Tyhp\Generic::bind($wrapped, Type::int())` binds the target and keeps the conversions
+  (`bind` on any other anonymous closure throws `\InvalidArgumentException`).
   Overlay tyhpdefs that omit the stamp keep erase / inline emit. `#[\Tyhp\EraseGeneric]` opts
   properties out of Mechanism C tracking.
 

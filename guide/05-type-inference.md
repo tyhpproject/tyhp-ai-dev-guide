@@ -27,6 +27,17 @@ Inference specifics:
   specific type without narrowing ([§16](16-type-guards.md)).
 - `mixed` is the **only** top type and is **always** strict — no config relaxes it. If you know
   TypeScript: `mixed` is its `unknown`, and Tyhp has no equivalent of `any`.
+- Narrow a `mixed` value before: member access / method call, `$m()`, `$m[0]`, arithmetic, `< > <= >=`,
+  concatenation / interpolation / `echo` / `print`, `$m::class`, spread (`[...$m]`, `f(...$m)`), and
+  `$m->p ?? 1` / `$m->p ??= 1` (TYHP4160, TYHP4120, TYHP4096). Allowed on `mixed`: `===`, `isset`, `$m ?? 1`,
+  `$m['k'] ?? 1`, explicit casts. A class `const mixed X` reads as `mixed`; `!== null` leaves it `mixed`.
+- Generics: a `mixed` argument binds `T = mixed`, so `T extends int|string` fails (TYHP4035); a bare `T`
+  binds a nullable argument as `T = ?X`. Spread arguments are checked element by element.
+- Narrowing: `||` / `&&` combine guards on **variables** (not across property or index-key guards);
+  `$m instanceof C` gives `C`; a redundant guard keeps the precise type; assignment narrowing checks the
+  right-hand side first (`$m = $m + 1` on `mixed` is an error).
+- TYHP4101 also reports members missing on classes, interfaces, and `object` (`property_exists` /
+  `method_exists` guards count); bare `object` has no members.
 - Null safety and required type annotations (params, returns, untyped locals without an inferable
   initializer) are likewise unconditional — there are no `checker.strictNullChecks` /
   `checker.noImplicitAny` toggles.

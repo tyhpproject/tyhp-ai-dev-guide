@@ -10,7 +10,9 @@ Every key must be a real property; each value must fit its type. In-place `$obj 
 rejected on `readonly` (`TYHP4141`) — use `clone … with` or `new … with`.
 
 **Structs** → array replace (`\array_replace` / a new array literal) — rebinds the array, same as
-passing an array into a PHP function.
+passing an array into a PHP function. The statement `$p with […];` reassigns the target
+(`$p = \array_replace($p, […]);`, also for property targets); used as a value (`$q = $p with […]`) it
+leaves `$p` unchanged. Anonymous struct types behave like named structs.
 
 **Classes** compile. In-place `$obj with […]` mutates identity, same as passing an object into a
 PHP function. Target `output.phpVersion` ≥ `8.5` → native `clone($obj, […])`. On 8.2–8.4,

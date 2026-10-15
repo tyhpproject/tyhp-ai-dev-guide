@@ -80,7 +80,10 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >    reassignment.
 > 4. Type system: known types now enforced (`static` return-only; `resource` not user-writable); new
 >    types (`decimal`→`\Tyhp\Decimal`, `struct`→`array`, literal types); unions/intersections/`?T`;
->    `mixed` collapse; `(decimal)` cast status; `(object)` is identity on an already-object operand
+>    `mixed` collapse; `decimal` creation (`\Tyhp\decimal()`, `new Decimal`, `(decimal)` cast from
+>    `string`/`int`/`float` only — TYHP4008 otherwise) and operator-first usage (operators on `decimal`
+>    return `decimal`/`bool`/`int`; methods only for `divide($x, $scale)`, `round`, `withScale`, `sqrt`,
+>    `format`); `(object)` is identity on an already-object operand
 >    (concrete class, builtin `object`, all-object union) and converts array/scalar/null/`mixed` to
 >    engine `\stdClass` (not builtin `object`; emit stays `(object)`); undeclared property writes
 >    (TYHP4134) are legal only on exact `\stdClass` — subclasses declare properties or use
@@ -122,9 +125,10 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     adapt; `TYHP4169` if redundant); tyhpdef class-body members are thin `=>` mappings that splice
 >     unless `#[\Tyhp\GenericRuntime]` is present (foreign sites use `\Tyhp\Generic::bind`); compiled libraries copy in-package
 >     `global use extension` into `package.tyhpdef`).
-> 13. async/await (Fiber/Promise; `\Tyhp\Promise::_async/_await`; outer return `\Tyhp\Promise`; no
->     async generators; Promise API surface; **cancellation** via `CancellationToken(Source)` +
->     `OperationCancelledException`/`TimeoutException`, unhandled-rejection behavior; `foreach (await
+> 13. async/await (Fiber/Promise; `\Tyhp\Promise::_async/_await`; outer return `\Tyhp\Promise`; **declared
+>     async return type is the settled type** (`__Awaited<R>`), `Promise<T extends __Awaited<void|mixed>>`, TYHP4373; no
+>     async generators; Promise API surface incl. `then` overloads and `Promise::run` typing; **cancellation** via `CancellationToken(Source)` +
+>     `OperationCancelledException`/`TimeoutException`, `run(…, $token)` loop shutdown, unhandled-rejection behavior; `foreach (await
 >     …)` gotcha; blocking PHP I/O blocks the `tyhp/async` loop).
 > 14. Deterministic disposal `using`/`:=` (`IsDisposable`/`AsyncIsDisposable`; try/finally and
 >     `DisposableScope` lowering; **failure semantics**: reverse order, dispose-throw masks the body
@@ -253,7 +257,7 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 > - `QUICK_GUIDE.md` pointers name files that exist; `AGENTS.md`/`CLAUDE.md` present.
 > - Every ⚠️/"use the PHP form" claim matches the current emitter/checker behavior.
 > - No compiler-internal jargon leaked into the guide/handbook prose.
-> - Package trees, `test-all-tyhpdef.sh`, and `php/_tyhpdef` live under `../tyhp-runtime-src/packages/`.
+> - Compiled runtime packages live under `../tyhp-runtime-src/packages/tyhp/`; tyhpdef packages (`php/_tyhpdef`, `php-ext-*`, Composer-lib wrappers) under `../tyhp-runtime-src/packages/tyhpdef/`; `test-all-tyhpdef.sh` is in `../tyhp-runtime-src/packages/`.
 > - Measure total token count with `tiktoken` (`o200k_base`) and note it in the summary.
 >
 > **Handbook content** (same audience, on-demand load), split across `handbook/` section files, covering:

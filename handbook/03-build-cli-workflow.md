@@ -47,7 +47,7 @@ tyhp generate_tyhpdef --ext-name=curl
 tyhp generate_tyhpdef --package-path=./vendor/guzzlehttp/guzzle --output=./tyhpdef/
 tyhp generate_tyhpdef --source=./lib/**/*.php
 tyhp generate_tyhpdef --validate ./tyhpdef/
-tyhp generate_tyhpdef --audit-stubs=../tyhp-runtime-src/packages/php/_tyhpdef --out=stub-audit.md
+tyhp generate_tyhpdef --audit-stubs=../tyhp-runtime-src/packages/tyhpdef/php/_tyhpdef --out=stub-audit.md
 tyhp generate_tyhpdef --ext-name=curl --php-targets=8.2,8.3,8.4,8.5
 ```
 

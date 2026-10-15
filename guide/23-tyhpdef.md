@@ -27,6 +27,11 @@ global use extension StringOps;
 #[\Tyhp\Php(">=8.4")]
 function array_find(array $array, callable $callback): mixed;
 ```
+- Same-name functions are overloads. An integer-literal parameter matches that value,
+  including `const int NAME ?? N`. A bitwise `|` / `&` / `^` / `~` of known integer
+  constants also matches a positive literal when every bit of the literal is set; the
+  literal with the most such bits wins, and two equal matches use the `int` signature.
+  `\json_encode($v, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES)` is `string`.
 - Declarable: functions, classes, interfaces, traits, enums, constants (`const T NAME;`, optional
   `?? default`), globals (`T $var;`), structs, type aliases (file-level and class-body `type` with
   visibility), `namespace`/`use`, standalone

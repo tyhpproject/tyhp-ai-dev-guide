@@ -8,7 +8,7 @@
   "source":  { "tagless": false },
   "output":  { "path": "build/", "phpVersion": "8.4", "strictTypes": true, "namespacePrefix": null },
   "psr4":    { "App\\": "src/" },
-  "build":   { "decimalBacking": "bcmath", "decimalScale": 28, "structBacking": "array", "updateComposer": false }
+  "build":   { "updateComposer": false }
 }
 ```
 - **`output.phpVersion`:** `"8.0"`–`"8.5"`. Omitted → `"8.2"` + `TYHP4306` once. Unsupported explicit

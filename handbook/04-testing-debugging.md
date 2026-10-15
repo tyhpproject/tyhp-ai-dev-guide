@@ -1,6 +1,6 @@
 ## 4. Testing & debugging
 
-- **tyhpdef packages:** [tyhp-runtime-src](https://github.com/tyhpproject/tyhp-runtime-src) `packages/test-all-tyhpdef.sh` lints each `tyhpdef/*` package `tests/` tree (positives must be clean). Expected-error cases live in `tests/fail/*.tyhp` with a sidecar `tests/fail/<stem>.expect.json` (numeric diagnostic codes; not in-source comments). Runs one job per package/version (`--jobs`, default CPU count; `-j 1` streams a single package). `--package` limits the run to one path (default: every package). A package that runs longer than 90 seconds (`--timeout`), including `composer update`, fails. `--dry-run`, `--fail-fast`. Skips `core` / `async` / `lambda` / `decimal` / `compiler`.
+- **tyhpdef packages:** [tyhp-runtime-src](https://github.com/tyhpproject/tyhp-runtime-src) `packages/test-all-tyhpdef.sh` lints each `tyhpdef/*` package `tests/` tree (positives must be clean). Expected-error cases live in `tests/fail/*.tyhp` with a sidecar `tests/fail/<stem>.expect.json` (numeric diagnostic codes; not in-source comments). Runs one job per package/version (`--jobs`, default CPU count; `-j 1` streams a single package). `--package` limits the run to one path (default: every package). A package that runs longer than 90 seconds (`--timeout`), including `composer update`, fails. `--dry-run`, `--fail-fast`. Only `packages/tyhpdef/` is tested; the compiled `tyhp/*` runtime packages under `packages/tyhp/` are not.
 - ⚠️ **No `tyhp test`.** Test **emitted PHP** (PHPUnit, Pest, `php`). Same namespaces/class names.
 - **Compiler emit-and-run vs golden PHP:** `tests/conformance/storyNN/` compares emitted PHP to
   committed goldens and does not execute it. `tests/conformance/emit-and-run/` compiles fixtures
@@ -20,8 +20,8 @@
 - **`tyhp symbol_tree`:** parse+bind (no check/emit); JSON of the live environment (builtins,
   tyhpdefs, overlays, sources). `--filter=<substring>` on Tyhp name / FQN / PHP emit name;
   `--out=<file.json>`. Status on stderr. Confirm overlay `partial function` / `partial class` keep / rename here.
-- **Editors:** `tyhp-lang/vscode/` (VSIX `tyhp-lang.tyhp`) and `tyhp-lang/phpstorm/` (ZIP
-  `com.tyhp.lang`). Language id `tyhp` for `.tyhp` and `.tyhpdef`. Settings: `tyhp.path`,
+- **Editors:** the VS Code extension (VSIX) and the PhpStorm plugin (ZIP `com.tyhp.lang`), both in the
+  `tyhp-ide-plugin` repository under `vscode/` and `phpstorm/`. Language id `tyhp` for `.tyhp` and `.tyhpdef`. Settings: `tyhp.path`,
   `tyhp.projectPath`, `tyhp.xdebugProxy.idePort`. Sideload the VSIX / “Install Plugin from Disk”.
   Marketplace publish is out of scope.
 - **Verify lowering:** read `build/` PHP. Mapping table: [guide §29](../guide/29-php-mapping.md).
