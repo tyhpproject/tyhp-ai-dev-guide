@@ -133,6 +133,8 @@ never() array() object() callable() iterable() resource()`, plus `union(self ...
 `getKind(): string` (`scalar|class|union|intersection|generic|struct|objectShape|callableShape|named`),
 `getName(): ?string`, `isNullable(): bool`, `isReadOnly(): bool`, `__toString()`.
 `union`/`intersection` throw `InvalidTypeException` with fewer than two distinct members.
+Object-shape fluent chain: `shape(?string $name = null)->method(string $name)->param(string $name, self $type, bool $optional = false, bool $variadic = false)->returns(self $type)->property(string $name)`. `param` and `returns` attach to the latest `method()`; an immutable receiver is copied. `is()` requires a public non-constructor method of that name. When a signature was recorded, it also checks parameter count (extra trailing optional parameters on the value are allowed), contravariant parameter types, a variadic shape parameter against a variadic method parameter, an optional shape parameter against an optional method parameter, and a covariant return when `returns` was used. Types use `compatible` (nullable and union included), plus `int` assignable to `float` and `object` as a supertype of class types. Class types are `fromClassName`. A name-only `method($name)` stays existence-only.
+Object-shape fluent chain: `shape(?string $name = null)->method(string $name)->param(string $name, self $type, bool $optional = false, bool $variadic = false)->returns(self $type)->property(string $name)`. `param` and `returns` attach to the latest `method()`; an immutable receiver is copied. `is()` requires a public non-constructor method of that name. When a signature was recorded, it also checks parameter count (extra trailing optional parameters on the value are allowed), contravariant parameter types, a variadic shape parameter against a variadic method parameter, an optional shape parameter against an optional method parameter, and a covariant return when `returns` was used. Types use `compatible` (nullable and union included), plus `int` assignable to `float` and `object` as a supertype of class types. Class types are `fromClassName`. A name-only `method($name)` stays existence-only.
 
 **`\Tyhp\NamedType` (extends `Type`)** — `__construct(string $parameterName, Type $underlyingType, bool $readOnly = false)` ·
 `getParameterName(): string` · `getUnderlyingType(): Type` · `asReadOnly(): self`; matching and
@@ -182,8 +184,14 @@ passed to a parameter typed `Expression<callable(T): R>` (or `PropertyPath<calla
 (`$expr($arg)`, also accepted by PHP `callable` parameters such as `\array_filter`), `compile():
 \Closure<TCallableShape>` (a `\Closure` parameter accepts an `Expression` argument directly, via `->callable`),
 `equals(Expression $other): bool`.
-`Expression::of(User::class, 'a', 'b')` builds paths for PHP callers, with `and()`/`or()` and static
-`andAll()`/`orAll()` (arguments typed `Expression<callable(mixed): bool>`). Node classes
+`Expression::lambda($body, $parameters, $callable)` and `PropertyPath::from($sourceType, $path, $callable)`
+build the same objects for PHP and Tyhp callers. Neither call passes generic type arguments.
+`Expression::lambda` reads the return type from the closure, then from the body node's type.
+`PropertyPath::from` reads it from the closure, then from the declared types of the properties
+in `$path` (`$nullSafeFlags` marks `?->` segments and makes that result nullable). An optional
+fourth argument is `array<bool> $nullSafeFlags`. `Expression::of(User::class, 'a', 'b')` builds
+paths for PHP callers, with `and()`/`or()` and static `andAll()`/`orAll()` (arguments typed
+`Expression<callable(mixed): bool>`). Node classes
 (`Tyhp\Expression\*`): `ParameterExpression`, `PropertyAccessExpression`, `NullSafeAccessExpression`,
 `MethodCallExpression`, `StaticMethodCallExpression`, `BinaryExpression`, `UnaryExpression`,
 `ConstantExpression`, `TernaryExpression`, `CoalesceExpression` (`??`), `ArrayAccessExpression`,
