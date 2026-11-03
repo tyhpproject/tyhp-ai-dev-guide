@@ -5,7 +5,11 @@
 # Python
 __pycache__/
 
-# Local Cursor state
-.cursor/
+# Local Cursor state, except the shared changelog rule
+.cursor/*
+!.cursor/rules/
+.cursor/rules/*
+!.cursor/rules/changelog.mdc
+*/**/.cursor/
 
 node_modules/

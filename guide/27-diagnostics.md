@@ -12,6 +12,7 @@ underlines; `--quiet` is one line. Unknown names may include a **did you mean**.
 | `TYHP4009` | return type not compatible with declared return |
 | `TYHP4010` | argument not assignable to parameter |
 | `TYHP4015` | value possibly null where non-null required |
+| `TYHP4198` | property, method call, or struct/object index on a possibly null receiver — narrow it or use `?->` |
 | `TYHP4016` | variable needs a type annotation or inferable initializer |
 | `TYHP4021` | assign to `readonly` property |
 | `TYHP4025` | member visibility violation |
@@ -34,9 +35,11 @@ underlines; `--quiet` is one line. Unknown names may include a **did you mean**.
 | `TYHP4101` | method/property not declared on the receiver's class, interface, or `object` type (also: extension not in scope in this file) |
 | `TYHP4121` | empty `catch` swallows exceptions — name `$e` and `(void)$e` to discard on purpose |
 | `TYHP4138` | can't infer closure parameter type — annotate it |
-| `TYHP4139` | readonly `clone … with` on PHP &lt; 8.5 without `build.experimentalReadonlyCloneWith` |
-| `TYHP4140` | readonly `clone … with` on a `final` class, PHP &lt; 8.5 |
+| `TYHP4139` | readonly `clone … with` on PHP 8.3–8.4 without `build.experimentalReadonlyCloneWith` |
+| `TYHP4140` | readonly `with` on a `final` class, PHP &lt; 8.5 |
 | `TYHP4141` | in-place `with` on a readonly property |
+| `TYHP4400` | readonly `new … with` or `clone … with` when `output.phpVersion` is below 8.3 |
+| `TYHP4401` | `clone … with` on a `readonly class` when `output.phpVersion` is below 8.5 |
 | `TYHP4300`–`TYHP4306` | PHP version gates ([§30](30-php-version-gating.md)) |
 | `TYHP4307` | `.tyhp` used an `extern` name (type / function / const) |
 | `TYHP4326` | user type listed `\Traversable`; use `\Iterator` or `\IteratorAggregate` |

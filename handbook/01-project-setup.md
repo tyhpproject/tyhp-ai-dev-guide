@@ -44,7 +44,7 @@ parsed and re-emitted. `.tyhpdef` is types only, never emitted.
 | `build.entryPointAutoloader` | `null` | Inject `require_once` into entry files. |
 | `build.generateSourcemap` | `false` | Write `*.php.map` beside PHP. |
 | `build.generateTyhpdef` | apps: false | Apps only; libraries ignore (always emit). |
-| `build.experimentalReadonlyCloneWith` | `false` | PHP 8.2–8.4 readonly `clone … with`. |
+| `build.experimentalReadonlyCloneWith` | `false` | PHP 8.3–8.4 readonly `clone … with` on a class that is not `readonly`. |
 | `psr4Includes` | `null` | ⚠️ parsed, no effect. |
 
 `tyhp init` writes `config.allow-plugins.tyhp/core: true`. `tyhp composer` / `sync` / `build --fix` also write it when missing (never overwrites explicit `false`). A raw `composer` still needs the key on disk.

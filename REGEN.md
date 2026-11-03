@@ -76,8 +76,10 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >    for a few features; stricter than PHP; locals lead with `$x = …`, `int $x = …` when inference
 >    is not enough) + one small orientation example.
 > 2. Files & open tags (`.tyhp`/`.tyhpdef`/`.php`, `<?tyhp `/`<?tyhpdef `, tagless mode).
-> 3. The two strict rules: non-nullable by default; conditions must be `bool`; narrowing resets on
->    reassignment.
+> 3. The two strict rules: non-nullable by default (a possibly null receiver must be narrowed before
+>    `->` property/method access or struct/object indexing — TYHP4198; `?->` / `??` are the
+>    shorthands; a `?->` chain's value is nullable, later links in the same chain skip with it);
+>    conditions must be `bool`; narrowing resets on reassignment.
 > 4. Type system: known types now enforced (`static` return-only; `resource` not user-writable); new
 >    types (`decimal`→`\Tyhp\Decimal`, `struct`→`array`, literal types); unions/intersections/`?T`;
 >    `mixed` collapse; `decimal` creation (`\Tyhp\decimal()`, `new Decimal`, `(decimal)` cast from
@@ -100,6 +102,7 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 > 7. Generics (erased from signatures): declaration, `extends` constraints, `= Type` defaults (note defaults not yet
 >    applied — pass all type args), generic args on `extends`/`implements`, erasure rules,
 >    compiled libraries stamp `#[\Tyhp\GenericRuntime]` on every emitted generic (`erased` + `layouts: [1]`; `factory`/`binder` only when helpers exist; foreign sites use `\Tyhp\Generic::bind`; overlays that omit the stamp keep erase/inline; `#[\Tyhp\EraseGeneric]` opts properties out of tracking),
+>    `#[\Tyhp\PropertyType('…')]` on properties / promoted params whose PHP hint is lossy (type args, structs, source aliases; not when a type parameter appears; written stamps replaced) read by `\Tyhp\Type::fromProperty()` + `elementType()`/`typeArguments()`,
 >    `array<T>`/`array<K,V>`, `iterable<…>`, callable shapes `callable(…): R`
 >    (`callable(): bool` is 0-arg; `callable(...): TReturn` is an `extends`-only any-arity bound;
 >    packs auto-splice inside a callable-shape parameter list; postfix `T...` is a trailing PHP variadic),
@@ -136,18 +139,29 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     warns).
 > 15. `with` expressions (clone/new/in-place forms; readonly rule; structs **and** classes compile;
 >     object `with` mutates identity, struct `with` rebinds an array — PHP object-vs-array argument
->     analogy; PHP < 8.5 readonly `clone … with` needs `build.experimentalReadonlyCloneWith`).
+>     analogy; readonly `new`/`clone … with` below 8.3 is TYHP4400; PHP 8.3–8.4 readonly `clone … with`
+>     needs `build.experimentalReadonlyCloneWith` and is TYHP4401 on a `readonly class`).
 > 16. Type guards + narrowing + `is` (guard `: $x is T`→`: bool`; `is` emit is tyhpdef-driven:
 >     `#[\Tyhp\NativeTypeTest]` on a free function or concrete static method with `$param is T`
 >     → `\Fqn($x)` / `\Class::method($x)`; unmarked
 >     class/interface/enum/trait → `instanceof`; else `\Tyhp\Type::is`. `$x is null` allowed.
->     Narrowing table; what does not narrow). Closure/Fiber generic shapes: `as`,
->     not `is`.
+>     Narrowing table incl. loose `!=`/`==` null; if-arm early exit (also with `else`); `\assert($c);`;
+>     `switch (true)` / `match (true)` earlier-arm negation; what does not narrow; property reads
+>     `$this->p` / `$obj->p` / nested `$a->b->c` / `self::$p` / `Foo::$p` narrow like variables,
+>     assign/`unset` clears the path and sub-paths, method-call results do not). Closure/Fiber
+>     generic shapes: `as`, not `is`.
 > 17. Compile-time helpers (`nameof`, `default(T)`, `typeof` takes a **type** — `typeof(int)`,
 >     `typeof(Optional<int>)`, source alias → factory; value path is `\Tyhp\Type::of($value)`;
 >     `variable_exists` → `\array_key_exists`).
 > 18. String-as-type features (symbol-name types list + existence-check narrowing; template string
->     types + quantifiers; all erase to `string`; include `__SuperTypeName`).
+>     types + quantifiers; holes may name aliases (`${ApiMethod}`, composing template aliases such as
+>     `"${ApiMethod} ${ApiPath}"`; unknown names are errors; a hole must be a string, `int`, or
+>     `float` type, literal, or union — `${array}` / `${bool}` / `${mixed}` / `${$x}` / an inline
+>     nested template are errors (TYHP4199)); numeric holes take the text PHP's `(string)` cast
+>     produces (`${int}`: `'3'`, not `'03'`); a double-quoted interpolation whose text
+>     and hole types fit the pattern is assignable to it (`${string}` holes take any interpolated
+>     value; a possibly-null value is `''` when null, so it needs a hole that accepts `''` or other
+>     text in the same `${string}` hole); all erase to `string`; include `__SuperTypeName`).
 > 19. Utility types (global `__Partial<T>` `__Pick<T,K>` `__Record<K,V>` `__Awaited<T>`
 >     `__Nullable<T>` `__NonNullable<T>` `__AsReadOnly<T>` …; callable-keyed `__CallableReturnType` /
 >     `__CallableParametersStruct` / `__CallableParametersTuple` / `__CallableParametersRest` /
@@ -158,7 +172,14 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     `&get` needs 8.4; `.tyhpdef` describes hooks as bodyless `{ get; set; }` / `{ &get; }`, no
 >     `get { }` / `get =>`; `#[\Tyhp\Php]` on the property not the hook).
 > 21. Expression trees / parsable lambdas (`Expression<callable(...)>`/`PropertyPath<callable(T): R>`;
->     inline-`fn` only; `TCallableShape`; `->callable`; `tyhp/lambda`; experimental).
+>     inline-`fn` only; `TCallableShape`; `->callable`; `tyhp/lambda`; experimental;
+>     a generic `R` is inferred from the inline `fn` body for both (also in a union with `callable(T): R`; `?->` gives nullable `R`);
+>     body rules: nested arrow `fn` (params typed from the callee incl. a `PropertyPath` param, may read outer params, shadowing by name,
+>     no by-ref/variadic/default params), list/keyed array literals (spread rejected), TYHP4322 for a class in a
+>     variable (`dynamic class`), a variable member name (`dynamic member`), named/unpacked call args, `?->` method calls with
+>     PHP chain short-circuit; nodes `LambdaExpression` / `ArrayExpression` / `NullSafeMethodCallExpression`;
+>     parameter / property node `->type` is the full declared type as a `\Tyhp\Type::parse()` spelling (`App\Table<App\Blog>`, `array<App\Post>`);
+>     `ExpressionSerializer::shapeKey` / `shapeParameters` for per-shape translation caches).
 > 22. Declarations — deltas vs PHP (declaration-site generics on class/interface/trait/enum/function;
 >     **constructor return type `: void` (optional; omitted ≡ `: void`) / `: parent(...)`**; `async` modifier; return-type guards;
 >     top-level overload signatures; trait property alias `$prop as $x`; `internal` omits from
@@ -191,7 +212,7 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     `.tyhp`, first-registered-wins).
 > 25. Runtime packages table (`tyhpdef/php` always-present 8.2–8.5 builtins;
 >     `tyhpdef/php-ext-*` optional extensions, Composer `php: >=8.2`, no per-minor forks; `tyhp/core`
->     (`PhpType`, `GenericRuntime` runtime-visible, `EraseGeneric` compile-only, `Generic::bind`, `ArrayAccessShape`, scalar methods) / `decimal` / `async` / `lambda`, key symbols).
+>     (`PhpType`, `GenericRuntime` / `PropertyType` runtime-visible, `EraseGeneric` compile-only, `Generic::bind`, `ArrayAccessShape`, scalar methods) / `decimal` / `async` / `lambda`, key symbols).
 >     `php-ext-decimal` is PECL Decimal, not `tyhp/decimal`. json/hash/libxml stay in `tyhpdef/php` only.
 >     Package tests run `../tyhp-runtime-src/packages/test-all-tyhpdef.sh`.
 > 26. Build, output layout & CLI: `tyhp.json` keys; **output layout** (classes → FQN segments under
@@ -212,7 +233,8 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 > 28. Availability & gotchas: "use freely" list (property hooks polyfill on 8.2–8.3, native on 8.4+;
 >     `&get` needs 8.4; **`tyhp/core` scalar catalog is use-freely** — `$s->length()` with no import);
 >     "annotate don't assume" (arrays/params/returns); "use the PHP form instead"
->     table; "not in the language yet" list (`internal` **is** in the language — omit from published
+>     table (include readonly property defaults below 8.6 → `TYHP4378`, enum `__debugInfo()` below 8.6
+>     → `TYHP4379`, other enum magic methods → `TYHP4024`); "not in the language yet" list (`internal` **is** in the language — omit from published
 >     `package.tyhpdef`). **Derive strictly from the current code.**
 > 29. PHP-mapping reference table (source `type X = …` → factory `function X(): \Tyhp\Type`;
 >     hints still expand; tyhpdef aliases inline unless `#[\Tyhp\GenericRuntime(aliasFactory: …)]`).

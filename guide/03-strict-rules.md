@@ -5,6 +5,17 @@
 string $n = null;    // ERROR
 ?string $n = null;   // OK
 ```
+A possibly null value must be narrowed before `->` property access, method calls, or struct/object
+indexing (TYHP4198):
+```tyhp
+?User $user = findUser($id);
+$user->name;                           // ERROR (TYHP4198)
+$user?->name ?? '';                    // OK
+if ($user !== null) { $user->name; }   // OK
+```
+A `?->` chain's value is nullable when its receiver may be null (`$user?->address` is
+`?Address`); a `?->` that meets `null` skips the rest of that chain, so later links
+(`$user?->address->city`) do not need another `?->`.
 **Conditions must be `bool`** (no truthiness):
 ```tyhp
 if ($user) {}          // ERROR (TYHP4043)

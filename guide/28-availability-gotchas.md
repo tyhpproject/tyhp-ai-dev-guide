@@ -18,7 +18,11 @@ initializers (including array literals).
 | Not | Use |
 |-----|-----|
 | in-place `$obj with […]` on `readonly` | `clone $obj with […]` or `new … with` |
+| readonly `new … with` or `clone … with` when `output.phpVersion` &lt; `8.3` (`TYHP4400`) | raise the target to 8.3+, or pass the values to the constructor |
+| `clone … with` on a `readonly class` when `output.phpVersion` &lt; `8.5` (`TYHP4401`) | raise the target to 8.5, or use `new … with` from 8.3 |
 | `&get` property hook when `output.phpVersion` &lt; `8.4` | by-value `get`, or raise the target to 8.4 |
+| default on a `readonly` property (or any property of a `readonly class`) when `output.phpVersion` &lt; `8.6` (`TYHP4378`) | assign it in the constructor, or a promoted parameter default (`public readonly int $x = 1` in the constructor signature) |
+| enum `__debugInfo()` when `output.phpVersion` &lt; `8.6` (`TYHP4379`); `__toString`, `__get`, `__clone`, `__serialize` and the other magic methods PHP rejects on enums (`TYHP4024`) | a regular method; enums may still declare `__call`, `__callStatic`, `__invoke` |
 | member/class-scoped or generic `type` aliases | a top-level non-generic `type` |
 | `#[\Tyhp\Php]` on `struct` / `extension` | wrap in `declare(php=…) { }` |
 | empty `catch (\T) {}` (`TYHP4121`) | `catch (\T $e) { (void)$e; }` (comment-only body still warns) |

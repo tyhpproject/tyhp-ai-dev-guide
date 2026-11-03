@@ -1,0 +1,27 @@
+---
+description: Add a CHANGELOG.md line with each notable guide change in the tyhp-ai-dev-guide repo; review the entries in commits the user asks for
+alwaysApply: true
+---
+
+# CHANGELOG.md
+
+Applies only to changes, commits, and pushes in the `tyhp-ai-dev-guide` repository. If you see this rule through a `.cursor/skills/tyhp` link in another project, ignore it and follow that project's changelog rule.
+
+`CHANGELOG.md` (Keep a Changelog) lists changes to the guide content (`SKILL.md`, `QUICK_GUIDE.md`, `AGENTS.md`, `guide/`, `handbook/`). It covers this repo only. Compiler, runtime package, docs, IDE client, and example changes have their own changelogs. It is not part of the skill index; do not link it from `SKILL.md`, `QUICK_GUIDE.md`, or a `00-index.md`.
+
+## When you make a change
+
+- When a change you make to the guide content is notable, add one line for it under `## [Unreleased]` as part of the same change, before you report the work done. Use the matching group: `### Added`, `### Changed`, `### Deprecated`, `### Removed`, `### Fixed`, `### Security`. Create the group if it is missing.
+- Write for people and agents using the guide: what an agent will now write differently, and which section changed (`guide/12-extensions.md`). A regeneration from `REGEN.md` is summarized by the sections it changed.
+- Wording-only edits and `REGEN.md` changes with no effect on the guide may be left out.
+- A regeneration does not produce or replace `CHANGELOG.md`; keep it.
+- Editing `CHANGELOG.md` is a normal file edit and needs no commit. Re-read the file right before editing, since other agents may be adding entries.
+
+## When the user asks you to commit
+
+- Review the `[Unreleased]` entries against the diff being committed rather than writing them from scratch: add lines for changes that have none, and condense or correct lines the diff no longer matches. Keep entries for other in-progress work.
+- Include the CHANGELOG edit in the commit the user asked for. Never commit just to update it.
+
+## When the user asks you to push a release
+
+The guide is not versioned; consumers pull `main`. When pushing to `main` at the user's request, move the `[Unreleased]` entries under `## YYYY-MM-DD` (push date) and leave an empty `## [Unreleased]` above it, as part of the commit being pushed.

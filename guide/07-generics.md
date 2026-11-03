@@ -41,6 +41,12 @@ class Repo<T> extends Base<T> implements Query<T> {}   // generic args on extend
   (`bind` on any other anonymous closure throws `\InvalidArgumentException`).
   Overlay tyhpdefs that omit the stamp keep erase / inline emit. `#[\Tyhp\EraseGeneric]` opts
   properties out of Mechanism C tracking.
+- A property or promoted constructor parameter whose PHP hint loses information gets
+  `#[\Tyhp\PropertyType('…')]` with the full type (`public array<Post> $posts` →
+  `#[\Tyhp\PropertyType('array<App\\Post>')] public array $posts`; also `?Table<Blog>`, struct types,
+  and source type aliases). Read it with `\Tyhp\Type::fromProperty(Blog::class, 'posts')`, then
+  `->elementType()` / `->typeArguments()`. Types that mention a type parameter (`array<T>`) are not
+  stamped; a written `#[\Tyhp\PropertyType]` is replaced by the compiler's.
 
 **`array<T>` / `array<K,V>`:** `array<T>` = keys `int|string`, values `T`; `array<K,V>` = keys `K`
 (`extends int|string`), values `V`. `iterable<…>` = same shape.

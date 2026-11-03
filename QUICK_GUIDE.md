@@ -36,8 +36,8 @@ use the alternative noted.
 ## Behavior / expressions
 - **async / await** — like C#/JS; the declared return type of an `async` callable is the settled type (`async function f(): int` → `Promise<int>` call, `int` awaited; `__Awaited<T>`; `Promise<T>` needs `T extends __Awaited<void|mixed>`, TYHP4373); cancel via `CancellationToken` (also ends `Promise::run`/`EventLoop::run`). `→ guide/13-async-await.md, handbook/07-runtime-api.md`
 - **using / disposables / `:=`** — like C# `using` + `IDisposable`; `$x := new R()` = scope-disposed local (C# `using` declaration / Go `defer`-ish). `→ guide/14-disposal.md`
-- **`with` expressions** — object `with` mutates identity; struct `with` rebinds an array (same as passing an object vs an array into a PHP function). `new Point() with [x => 1]` / `clone $obj with […]`. (Readonly `clone … with` on PHP &lt; 8.5 needs a
-  config flag.) `→ guide/15-with-expressions.md`
+- **`with` expressions** — object `with` mutates identity; struct `with` rebinds an array (same as passing an object vs an array into a PHP function). `new Point() with [x => 1]` / `clone $obj with […]`. (Readonly `new`/`clone … with` below 8.3 is TYHP4400. On 8.3–8.4, readonly `clone … with` needs a
+  config flag and is TYHP4401 on a `readonly class`.) `→ guide/15-with-expressions.md`
 - **Operator overloading** — like C# `operator +`, declared in the class/extension body (incl. `convert`). `→ guide/11-operator-overloading.md`
 - **Extension methods** — like C#/Kotlin: `extension E extends Money { fn f(...): T => expr; }` (`$this` implied; Tyhp-only `=>`) or `function { }` (PHP method on the backer). Nested groups: `extends Type { }`. Activate with `use extension`. `tyhp/core` scalars (`$s->length()`) need no import. `→ guide/12-extensions.md`
 - **Type guards + narrowing** — like TS: `function isX(mixed $v): $v is X`, narrows in `if`. `instanceof` / `is` are equivalent. `→ guide/16-type-guards.md`

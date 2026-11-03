@@ -16,6 +16,8 @@ leaves `$p` unchanged. Anonymous struct types behave like named structs.
 
 **Classes** compile. In-place `$obj with […]` mutates identity, same as passing an object into a
 PHP function. Target `output.phpVersion` ≥ `8.5` → native `clone($obj, […])`. On 8.2–8.4,
-non-readonly uses a helper around `clone`; **readonly** `clone … with` needs
-`build.experimentalReadonlyCloneWith: true` (`TYHP4139` if off). `new … with` on readonly does not
-need that flag. `final` + readonly `clone … with` on PHP < 8.5 is `TYHP4140`.
+non-readonly uses a helper around `clone`. Readonly `new … with` below 8.3 is `TYHP4400`; on 8.3+
+it does not need a flag. Readonly `clone … with` below 8.3 is also `TYHP4400`. On 8.3–8.4 it needs
+`build.experimentalReadonlyCloneWith: true` (`TYHP4139` if off) and the class must not be
+`readonly` (`TYHP4401` on a `readonly class` below 8.5). `final` + readonly `with` below 8.5 is
+`TYHP4140`.

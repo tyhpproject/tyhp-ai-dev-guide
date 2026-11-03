@@ -133,6 +133,19 @@ never() array() object() callable() iterable() resource()`, plus `union(self ...
 `getKind(): string` (`scalar|class|union|intersection|generic|struct|objectShape|callableShape|named`),
 `getName(): ?string`, `isNullable(): bool`, `isReadOnly(): bool`, `__toString()`.
 `union`/`intersection` throw `InvalidTypeException` with fewer than two distinct members.
+Declared types: `parse(string $spelling): self` reads the `__toString()` format (`?App\Post`,
+`array<string, App\Post>`, `App\Table<App\Blog>`, `int|string`, `struct App\Address`; a leading `\` is
+optional; a name registered with `register()` resolves through `ref()`; invalid spellings throw
+`InvalidTypeException`). `fromProperty(string|object $class, string $property): self` is the declared
+Tyhp type of a property: the compiler stamps `#[\Tyhp\PropertyType('…')]` on properties and promoted
+constructor parameters whose PHP hint loses type arguments, struct types, or source type aliases;
+without a stamp it is the reflected PHP type (`mixed` when untyped). `$class` may be a generic spelling,
+and an object whose class tracks generics resolves a property typed by a class type parameter to the
+bound argument. A missing property throws `PropertyNotFoundException`. Instance:
+`typeArguments(): array<int, self>` (class type arguments are positional), `typeArgument(int|string
+$position): ?self`, `elementType(): ?self` / `keyType(): ?self` (array and iterable types: `V` / `K`,
+`mixed` / `int|string` when bare), `fieldType(int|string $name): ?self` (struct types), and
+`erased(): self` (the PHP-declarable type: arguments dropped, structs `array`).
 Object-shape fluent chain: `shape(?string $name = null)->method(string $name)->param(string $name, self $type, bool $optional = false, bool $variadic = false)->returns(self $type)->property(string $name)`. `param` and `returns` attach to the latest `method()`; an immutable receiver is copied. `is()` requires a public non-constructor method of that name. When a signature was recorded, it also checks parameter count (extra trailing optional parameters on the value are allowed), contravariant parameter types, a variadic shape parameter against a variadic method parameter, an optional shape parameter against an optional method parameter, and a covariant return when `returns` was used. Types use `compatible` (nullable and union included), plus `int` assignable to `float` and `object` as a supertype of class types. Class types are `fromClassName`. A name-only `method($name)` stays existence-only.
 Object-shape fluent chain: `shape(?string $name = null)->method(string $name)->param(string $name, self $type, bool $optional = false, bool $variadic = false)->returns(self $type)->property(string $name)`. `param` and `returns` attach to the latest `method()`; an immutable receiver is copied. `is()` requires a public non-constructor method of that name. When a signature was recorded, it also checks parameter count (extra trailing optional parameters on the value are allowed), contravariant parameter types, a variadic shape parameter against a variadic method parameter, an optional shape parameter against an optional method parameter, and a covariant return when `returns` was used. Types use `compatible` (nullable and union included), plus `int` assignable to `float` and `object` as a supertype of class types. Class types are `fromClassName`. A name-only `method($name)` stays existence-only.
 
@@ -186,25 +199,47 @@ passed to a parameter typed `Expression<callable(T): R>` (or `PropertyPath<calla
 `equals(Expression $other): bool`.
 `Expression::lambda($body, $parameters, $callable)` and `PropertyPath::from($sourceType, $path, $callable)`
 build the same objects for PHP and Tyhp callers. Neither call passes generic type arguments.
+Parameter and property nodes spell `->type` in the `Type::parse()` format. A parameter keeps its full
+declared type (`App\Table<App\Blog>`, `struct App\Address`; a plain class is its name). A property
+node is the declared type from `Type::fromProperty()` (`array<App\Post>`), nullable after `?->` or a
+nullable receiver, or `mixed` when the receiver type is unknown. Method-call nodes are `mixed`.
 `Expression::lambda` reads the return type from the closure, then from the body node's type.
 `PropertyPath::from` reads it from the closure, then from the declared types of the properties
-in `$path` (`$nullSafeFlags` marks `?->` segments and makes that result nullable). An optional
+in `$path` (`$nullSafeFlags` marks `?->` segments and makes that result nullable). When the
+closure's PHP return type is the erased form of the body or path type (`array` for
+`array<App\Post>`), the full type is kept. An optional
 fourth argument is `array<bool> $nullSafeFlags`. `Expression::of(User::class, 'a', 'b')` builds
 paths for PHP callers, with `and()`/`or()` and static `andAll()`/`orAll()` (arguments typed
 `Expression<callable(mixed): bool>`). Node classes
 (`Tyhp\Expression\*`): `ParameterExpression`, `PropertyAccessExpression`, `NullSafeAccessExpression`,
 `MethodCallExpression`, `StaticMethodCallExpression`, `BinaryExpression`, `UnaryExpression`,
 `ConstantExpression`, `TernaryExpression`, `CoalesceExpression` (`??`), `ArrayAccessExpression`,
-`CastExpression`, `NewExpression`, `InstanceofExpression`. Translate a tree with an `ExpressionVisitor`
+`CastExpression`, `NewExpression`, `InstanceofExpression`, `NullSafeMethodCallExpression` (`$x?->m()`),
+`ArrayExpression` (`->items`: `array<ArrayItem>`, each `->key` (`?ExpressionNode`, null for the next integer
+key) and `->value`), and `LambdaExpression` (a nested `fn`: `->parameters`, `->body`, `->returnType`). A
+`ParameterExpression` resolves to the nearest enclosing `LambdaExpression` that declares its name, otherwise
+to the outer argument at its `->index`; evaluating a `LambdaExpression` gives a `\Closure`. A `?->` link that
+meets `null` makes the rest of that property/method/index chain `null`. Fluent builders: `Expr::closure([params],
+$body, $returnType)` and `Expr::arrayOf($values, $keys)`. Translate a tree with an `ExpressionVisitor`
 (`visit($node): mixed`, one `visitBinary` / `visitPropertyAccess` / `visitConstant` / … per node type;
 defaults return `null` and do not recurse); `ExpressionSerializer::toJson(Expression $e): string` and
-`::equals($a, $b): bool`. `PropertyPath` adds `getPropertyName(): string`, `getPath(): string`
+`::equals($a, $b): bool`. To cache a translation per tree shape, `ExpressionSerializer::shapeKey(Expression $e):
+string` returns a 32-hex-character `xxh128` key, the same in every process, that covers everything
+`toJson` writes except `ConstantExpression` values (captured variables, literals, and `Cls::CONST` are all
+constants). `::shapeParameters(Expression $e): array<mixed>` returns those values left to right as written.
+`ExpressionShape::of(Expression $e)` gives both at once (`->key`, `->parameters`, `->constants`:
+`array<ConstantExpression>`), and `->slotOf(ConstantExpression $c): int` gives a constant's position, so a
+plan built from one tree can be run with another tree's `->parameters`. A constant's type spelling stays in
+the key: literal spellings (`18`, `true`) count as their PHP type (`int`, `bool`), and `int`, `string`, and
+`null` constants give different keys. A constant used as an array-literal key keeps its value in the key.
+`PropertyPath` adds `getPropertyName(): string`, `getPath(): string`
 (`'address.city'`), `getSegments(): array<string>`, and `getValue(mixed $source)`.
-An `fn` body must be one expression made of: property/null-safe property access, method and static
-calls, binary/unary operators, casts, ternary/`?:`/`??`, array access, `new`, `instanceof`/`is`,
-int/float/string literals (no interpolation), `true`/`false`/`null`, `Cls::CONST`, and captured
-variables. Anything else (function calls, assignments, `match`, `await`, array literals, first-class
-callables, shell commands, string interpolation, …) is **TYHP4322**, which names the construct; non-`fn` arguments are **TYHP4320** (`PropertyPath`) / **TYHP4323**
+An `fn` body must be one expression made of: property and method access (plain or `?->`), static
+calls, binary/unary operators, casts, ternary/`?:`/`??`, array access, list and keyed array literals,
+nested arrow `fn`, `new`, `instanceof`/`is`, int/float/string literals (no interpolation),
+`true`/`false`/`null`, `Cls::CONST`, and captured variables. Anything else (function calls, assignments,
+`match`, `await`, `function () {}` closures, array spread, by-reference/variadic/defaulted nested `fn`
+parameters, first-class callables, shell commands, string interpolation, …) is **TYHP4322**, which names the construct; non-`fn` arguments are **TYHP4320** (`PropertyPath`) / **TYHP4323**
 (`Expression`); an `Expression` of another callable shape is **TYHP4010**.
 
 **`\Tyhp\Parallel` / `ParallelTask<T>`** (`tyhp/parallel`) — process pool, not fibers.
@@ -329,7 +364,7 @@ failure inside the job (including a `Dns` lookup that resolves nothing) rejects 
 job threw.
 
 **`\Tyhp\EventLoop`** (low-level; you rarely touch it directly): `static getInstance()`, `static resetInstance()`,
-`run<T extends __Awaited<void|mixed> = mixed>(Promise<T> $root, ?CancellationToken $token = null): T` (cancelling the
-token while the root is pending shuts the loop down and throws `OperationCancelledException`), `runUntilSettled(Promise $p, int $timeoutMs = -1)`, `delay(int $ms,
+`run<T extends __Awaited<void|mixed> = mixed>(Promise<T> $root, ?CancellationToken $token = null): T` (`T` is inferred
+from the root, including `Promise<void>`; cancelling the token while the root is pending shuts the loop down and throws `OperationCancelledException`), `runUntilSettled(Promise $p, int $timeoutMs = -1)`, `delay(int $ms,
 callable $cb): string` (+ `cancelTimer`, `interval`), `defer/queueMicrotask(callable $cb)`, stream
 registration, `tick(): bool`, `stop()`, `isRunning(): bool`.
