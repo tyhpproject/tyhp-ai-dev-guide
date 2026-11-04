@@ -4,6 +4,8 @@ Notable changes to the Tyhp AI development guide (`SKILL.md`, `QUICK_GUIDE.md`, 
 
 ## [Unreleased]
 
+## 2026-11-04
+
 ### Changed
 
 - `QUICK_GUIDE.md`, `SKILL.md`, `guide/02-files-and-tags.md`, `guide/26-build-cli.md`, `guide/28-availability-gotchas.md`, `guide/29-php-mapping.md`, `handbook/01-project-setup.md`, and `handbook/05-php-interop.md`: agents write `<?=` in a `.tyhp` file as a checked echo (emitted as `echo`), and expect PHPStan/Psalm tags where the emitted PHP hint drops a type (`emit.docblocks` default `lossy-only`; `emit.docblockDialect` does not change the tags).
