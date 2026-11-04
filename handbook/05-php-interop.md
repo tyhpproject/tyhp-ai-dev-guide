@@ -61,3 +61,54 @@ Flags: [handbook §3](03-build-cli-workflow.md).
 Symbol resolution order ([guide §24](../guide/24-php-interop.md)) is built-in → embedded tyhpdef → vendor package → your tyhpdef →
 your `.tyhp`, and **the first registration wins** — you can't shadow a library symbol with a
 same-named local declaration.
+
+**Emitted docblocks (what PHP consumers can rely on).** Every build profile (`debug`, `balanced`,
+`release`) writes PHPStan/Psalm tags where the native declaration drops a type the checker has.
+Independent of `output.comments`. The compiler does not run PHPStan or Psalm; run them on the emitted PHP.
+
+| Key | Default | Effect |
+|-----|---------|--------|
+| `emit.docblocks` | `lossy-only` | Tag only when it beats the native hint. `all` tags every signature type. `off` emits no generated tags (including generated `@template` and lowered-hook `@property`). |
+| `emit.docblockDialect` | `both` | `phpstan` \| `psalm` \| `both` \| `phpdoc`. Parsed and validated. Does not change output. Shared syntax is unprefixed; a `@phpstan-` / `@psalm-` prefix is used only where the dialects diverge, and no current tag needs one. |
+
+Invalid value → warning `TYHP6003`; the default stays.
+
+Tags when the checker has the data: `@param` (variadic `...$name`), `@param-out` on a by-ref parameter,
+`@return`, `@var`, `@template` / `@template-covariant` / `@template-contravariant` (`of Bound` and
+`= Default` when the parameter has them), `@extends` / `@implements` / `@use` (under `lossy-only`,
+when the reference has type arguments), `@internal`. `@throws` is not generated.
+
+Merge: summary prose, then `@tyhp` directives and `/@@ … @@/` blocks in original order, then tags.
+An author analysis tag wins per key and is copied as written (that key's place, signature order);
+the generator fills gaps. Author tags with no generated counterpart, including every `@throws`, follow.
+`output.comments: false` drops prose and keeps directives and every author analysis tag.
+
+Generated names are fully qualified; `use … as X` expands to the real name. `self`, `parent`, and
+`static` stay relative. `class-string` / `class-string<T>` only for class, interface, and enum name
+brands; trait, used-trait, and struct name brands are `string`; a function-name brand is
+`callable-string`. A struct parameter is `array{…}`; a field with a default or a nullable type is
+`key?:` (`key?: ?type` when nullable). Callables are `callable(int): string`.
+Parentheses keep a union unambiguous: `(callable(int): string)|null`, `callable(): (int|string)`,
+`callable(int): ?string` for a `string|null` return. Public property hooks lowered below PHP 8.4
+also get `@property` / `@property-read` / `@property-write`.
+
+```tyhp
+<?tyhp
+
+type Money = struct {
+    int $cents;
+    string $currency = "USD";
+    ?string $note;
+};
+
+function price(Money $money): int {
+    return $money->cents;
+}
+```
+
+```php
+/**
+ * @param array{cents: int, currency?: string, note?: ?string} $money
+ */
+function price(array $money): int
+```

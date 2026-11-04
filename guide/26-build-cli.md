@@ -35,6 +35,13 @@
   `tyhp composer sync`. Default `tyhp build`/`lint` explain (`TYHP7701`); `--strict` fails;
   `--fix` / `tyhp composer sync` writes; ordinary build never auto-updates.
   [handbook §1](../handbook/01-project-setup.md), [handbook §3](../handbook/03-build-cli-workflow.md).
+- **`emit.docblocks`:** `lossy-only` (default), `all`, or `off`. PHPStan/Psalm tags where the PHP
+  hint drops a type (`@param`, `@return`, `@var`, `@template` with `of` / variance / default,
+  `@extends` / `@implements` / `@use`, `@param-out`, `@internal`). On in `debug`, `balanced`, and
+  `release`, independent of `output.comments`. `off` emits none, including generated `@template`
+  and lowered-hook `@property`. **`emit.docblockDialect`:** `both` (default), `phpstan`, `psalm`,
+  or `phpdoc` — parsed (invalid → `TYHP6003`); tags stay unprefixed shared syntax. `@throws` is not
+  generated. Detail: [handbook §5](../handbook/05-php-interop.md).
 - **`build.generateSourcemap`:** `true` writes Source Map v3 `*.php.map` beside each PHP file
   (`//# sourceMappingURL=…`). Default false. Failures warn (`TYHP5020`–`TYHP5022`) and still emit PHP.
 - **CLI working today:** `build`, `lint`, `init`, `version` (`--json` OK), `help`, `explain`,

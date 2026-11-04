@@ -26,6 +26,8 @@
 | `$recv->extMethod(a)` (multi-statement member) | `\ExtClass::extMethod($recv, a)` |
 | `$recv->extMethod(a)` (spliced `=>` / single-`return`) | parenthesized mapping expression |
 | `<?tyhp` | `<?php` + `declare(strict_types=1);` |
+| `<?= expr ?>` in `.tyhp` | `echo expr;` (no escaping). `.php` `<?=` unchanged |
+| lossy signature (generic, struct, `callable(int): string`, class/interface/enum name) | native hint plus a docblock tag (`emit.docblocks`, default `lossy-only`) |
 | `declare(php=…)` / `#[\Tyhp\Php]` | *(stripped; inactive bodies emit nothing)* |
 | `declare(ext=…)` / `fallback function` / `fallback const` | *(tyhpdef only; stripped. An unmatched `declare(ext)` binds nothing)* |
 | `$x \|> $f` (target &lt; 8.5) | nested call / temp (`$f($x)`), L→R |

@@ -38,7 +38,9 @@ parsed and re-emitted. `.tyhpdef` is types only, never emitted.
 | `output.namespacePrefix` | `null` | Prepended to emitted namespaces **and** path segments. |
 | `output.phpVersion` | *(unset → `"8.2"` + `TYHP4306`)* | `"8.0"`–`"8.5"`. Gates + lowering. Unsupported explicit → `TYHP6006` and `"8.4"`. |
 | `output.strictTypes` | `true` | `declare(strict_types=1);` |
-| `output.comments` | `true` | Generated-by header. |
+| `output.comments` | `true` | Generated-by header and author prose. `false` drops those and keeps `@tyhp` directives and analysis tags. |
+| `emit.docblocks` | `lossy-only` | PHPStan/Psalm tags where the PHP hint is lossier. `all` tags every signature type; `off` emits none. Every profile. [§5](05-php-interop.md) |
+| `emit.docblockDialect` | `both` | `phpstan`, `psalm`, `both`, or `phpdoc`. Parsed; does not change the tags. |
 | `psr4` | `null` | Composer autoload only. |
 | `build.updateComposer` | `false` | Write `composer.json` in `output.publishPath` + `composer install` ([§2](02-autoloading.md)). |
 | `build.entryPointAutoloader` | `null` | Inject `require_once` into entry files. |

@@ -75,7 +75,14 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >    arrays with no runtime shape check; remaining `$x is T` → `\Tyhp\Type::is`; `\Tyhp\` runtime
 >    for a few features; stricter than PHP; locals lead with `$x = …`, `int $x = …` when inference
 >    is not enough) + one small orientation example.
-> 2. Files & open tags (`.tyhp`/`.tyhpdef`/`.php`, `<?tyhp `/`<?tyhpdef `, tagless mode).
+> 2. Files & open tags (`.tyhp`/`.tyhpdef`/`.php`, `<?tyhp `/`<?tyhpdef `, tagless mode). In a
+>    `.tyhp` file `<?= expr ?>` is a Tyhp echo (parsed and checked as Tyhp, emitted as `echo`, no
+>    escaping; `is` / `typeof` / `with` / `nameof` active; non-stringable is TYHP4120; a missing
+>    member is TYHP4101 on the `.tyhp` line). `.php` `<?=` is unchanged. HTML emits as written
+>    (source indentation kept; one newline after `?>` swallowed; the pretty-printer does not indent
+>    HTML). `if (…):` / `endif;` and `foreach (…):` / `endforeach;` lower to braces. `source.tagless`
+>    forbids `?>`, so a template is a tagged file (first 6 characters `<?tyhp` in a tagless project).
+>    Capture with `\ob_start()` / `\ob_get_clean()`.
 > 3. The two strict rules: non-nullable by default (a possibly null receiver must be narrowed before
 >    `->` property/method access or struct/object indexing — TYHP4198; `?->` / `??` are the
 >    shorthands; a `?->` chain's value is nullable, later links in the same chain skip with it);
@@ -215,7 +222,14 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     (`PhpType`, `GenericRuntime` / `PropertyType` runtime-visible, `EraseGeneric` compile-only, `Generic::bind`, `ArrayAccessShape`, scalar methods) / `decimal` / `async` / `lambda`, key symbols).
 >     `php-ext-decimal` is PECL Decimal, not `tyhp/decimal`. json/hash/libxml stay in `tyhpdef/php` only.
 >     Package tests run `../tyhp-runtime-src/packages/test-all-tyhpdef.sh`.
-> 26. Build, output layout & CLI: `tyhp.json` keys; **output layout** (classes → FQN segments under
+> 26. Build, output layout & CLI: `tyhp.json` keys, including `emit.docblocks` (`lossy-only` default,
+>     `all`, `off`; every profile; independent of `output.comments`; `@param`, `@param-out`,
+>     `@return`, `@var`, `@template` with `of` / variance / default, `@extends`, `@implements`,
+>     `@use`, `@internal`; `@throws` is not generated; author tags win per key; `off` emits no
+>     generated tags, including `@template` and lowered-hook `@property`) and `emit.docblockDialect`
+>     (`both` default, `phpstan`, `psalm`, `phpdoc`; parsed; does not change output; unprefixed
+>     shared syntax; a `@phpstan-` / `@psalm-` prefix only where the dialects diverge — none today);
+>     **output layout** (classes → FQN segments under
 >     `output.path`; entrypoints mirror source; `_functions.php`); library `package.tyhpdef` keeps
 >     attributes, class-level `type`, in-package `global use`, `#[\Tyhp\GenericRuntime]`; libraries
 >     additive-merge `extra.tyhp.package` onto publish-directory `composer.json` (applications do not);
@@ -232,11 +246,13 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     `TYHP4165` NoDiscard unused return); note there is no dedicated unknown-member / arg-count error.
 > 28. Availability & gotchas: "use freely" list (property hooks polyfill on 8.2–8.3, native on 8.4+;
 >     `&get` needs 8.4; **`tyhp/core` scalar catalog is use-freely** — `$s->length()` with no import);
->     "annotate don't assume" (arrays/params/returns); "use the PHP form instead"
+>     "annotate don't assume" (arrays/params/returns); HTML templates in `.tyhp` (`<?=` checked
+>     `echo`) are use-freely; bare `<?` is not a short open tag; "use the PHP form instead"
 >     table (include readonly property defaults below 8.6 → `TYHP4378`, enum `__debugInfo()` below 8.6
 >     → `TYHP4379`, other enum magic methods → `TYHP4024`); "not in the language yet" list (`internal` **is** in the language — omit from published
 >     `package.tyhpdef`). **Derive strictly from the current code.**
-> 29. PHP-mapping reference table (source `type X = …` → factory `function X(): \Tyhp\Type`;
+> 29. PHP-mapping reference table (`<?= expr ?>` in `.tyhp` → `echo expr;`; a lossy signature also
+>     emits a PHPStan/Psalm tag under `emit.docblocks`; source `type X = …` → factory `function X(): \Tyhp\Type`;
 >     hints still expand; tyhpdef aliases inline unless `#[\Tyhp\GenericRuntime(aliasFactory: …)]`).
 > 30. PHP version gating: `declare(php="…")` (alone in that declare; file `;` vs `{ }` block);
 >     `#[\Tyhp\Php]` (illegal on `struct`/`extension`); Composer constraints vs `output.phpVersion`
@@ -291,7 +307,11 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 > testing (no `tyhp test` — test emitted PHP; tyhpdef package tests are `../tyhp-runtime-src/packages/test-all-tyhpdef.sh`; compiler emit-and-run at `../tyhp/tests/conformance/emit-and-run/`
 > executes PHP with `error_reporting=-1` / `display_errors=1` and is not golden-PHP dumps under `storyNN/`)
 > and debugging; a concrete PHP-interop walkthrough
-> (`.tyhpdef` for an untyped library; `tyhpdef/php` + `tyhpdef/php-ext-*` and overlays;
+> (`.tyhpdef` for an untyped library; emitted PHPStan/Psalm docblocks on lossy types —
+> `emit.docblocks` default `lossy-only`, `emit.docblockDialect` parsed but not changing output,
+> author tags win, `@throws` not generated, FQNs, `class-string` only for class/interface/enum
+> names, struct `array{key?: ?type}`, callable `callable(int): string` with union parentheses;
+> `tyhpdef/php` + `tyhpdef/php-ext-*` and overlays;
 > library authors fill `extra.tyhp.require`, never put author-only tyhpdefs in extras;
 > first `composer require tyhp/core` miss → `composer update` / `tyhp composer sync`);
 > fuller worked examples (extension, operator overload,

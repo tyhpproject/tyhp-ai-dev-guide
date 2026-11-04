@@ -8,7 +8,8 @@ and template string types; property hooks (polyfill on 8.2–8.3, native on 8.4+
 classes; `declare(php=…)` / `#[\Tyhp\Php]` / `#[\Tyhp\PhpType]`; `declare(ext="name")` /
 `declare(ext="!name")`; `fallback function` / `fallback const`; `internal` (omitted from
 `package.tyhpdef`); PHP 8.5 `|>`, `(void)`, `clone($o, […])` (lowered when
-the target is older); object shapes (`type Name = object { … }`) and `__New<T>`.
+the target is older); object shapes (`type Name = object { … }`) and `__New<T>`; HTML templates
+in a `.tyhp` file (`<?= expr ?>` is a checked `echo`, no escaping — [§2](02-files-and-tags.md)).
 
 **Annotate, don't assume:** every parameter/property and return type — locals infer from
 initializers (including array literals).
@@ -26,6 +27,8 @@ initializers (including array literals).
 | member/class-scoped or generic `type` aliases | a top-level non-generic `type` |
 | `#[\Tyhp\Php]` on `struct` / `extension` | wrap in `declare(php=…) { }` |
 | empty `catch (\T) {}` (`TYHP4121`) | `catch (\T $e) { (void)$e; }` (comment-only body still warns) |
+| bare `<?` short open tag | `<?tyhp`. `<?=` in `.tyhp` is the Tyhp echo; `<?=` in `.php` stays a PHP echo |
+| `?>` in a tagless `.tyhp` file | a tagged file (first 6 characters `<?tyhp` in a tagless project) |
 
 **Not in the language yet:** null-conditional assignment (`$a?->b = …`).
 ⚠️ `tyhp watch` is not implemented. `tyhp lint --fix` is a stub.

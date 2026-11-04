@@ -6,6 +6,7 @@ Notable changes to the Tyhp AI development guide (`SKILL.md`, `QUICK_GUIDE.md`, 
 
 ### Changed
 
+- `QUICK_GUIDE.md`, `SKILL.md`, `guide/02-files-and-tags.md`, `guide/26-build-cli.md`, `guide/28-availability-gotchas.md`, `guide/29-php-mapping.md`, `handbook/01-project-setup.md`, and `handbook/05-php-interop.md`: agents write `<?=` in a `.tyhp` file as a checked echo (emitted as `echo`), and expect PHPStan/Psalm tags where the emitted PHP hint drops a type (`emit.docblocks` default `lossy-only`; `emit.docblockDialect` does not change the tags).
 - `guide/02-files-and-tags.md`: in tagless mode a `.tyhp` file whose first 6 characters are `<?tyhp` is a tagged template (empty first section allowed, then HTML, `<?=`, and a later `<?tyhp`). The tagless entry has no open tag, so `<?tyhp` anywhere else in the file is not accepted.
 - `QUICK_GUIDE.md`, `guide/15-with-expressions.md`, `guide/27-diagnostics.md`, `guide/28-availability-gotchas.md`, and `handbook/01-project-setup.md`: readonly `new … with` and `clone … with` below PHP 8.3 are TYHP4400; `clone … with` on a `readonly class` below 8.5 is TYHP4401. The experimental flag applies on 8.3–8.4 for a class that is not readonly.
 - `guide/03-strict-rules.md`: a possibly null receiver must be narrowed before `->` access or indexing (TYHP4198), and a `?->` chain's value is nullable.

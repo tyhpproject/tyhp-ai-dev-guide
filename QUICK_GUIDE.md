@@ -11,7 +11,8 @@ use the alternative noted.
 
 ## Core rules
 - **Static typing** — like TypeScript over JS: every parameter, property, and return type is required. `→ guide/01-mental-model.md, guide/05-type-inference.md`
-- **Files/tags** — `.tyhp` + `<?tyhp ` (needs trailing space); `.tyhpdef` = declarations only. `→ guide/02-files-and-tags.md`
+- **Files/tags** — `.tyhp` + `<?tyhp ` (needs trailing space); `.tyhpdef` = declarations only. In `.tyhp`, `<?= expr ?>` is a checked echo (no escaping); `.php` `<?=` is unchanged. `→ guide/02-files-and-tags.md`
+- **Emitted docblocks** — PHPStan/Psalm tags where the PHP hint drops a type (`emit.docblocks`, default `lossy-only`, every build profile). `emit.docblockDialect` does not change the tags. `→ handbook/05-php-interop.md, guide/26-build-cli.md`
 - **Typed / inferred locals** — `$s = "hi";` is the primary form (like C# `var` / TS `let`); `string $s;` / `int $x = …` when inference is not enough. `→ guide/05-type-inference.md, guide/08-typed-locals.md`
 - **Non-nullable by default** — like C#/TS strict null: write `?string` / `|null` to allow `null`. `→ guide/03-strict-rules.md`
 - **Conditions must be `bool`** — no truthiness; write `if ($x !== null)` not `if ($x)`. `→ guide/03-strict-rules.md`
