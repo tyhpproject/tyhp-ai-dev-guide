@@ -32,9 +32,12 @@ if (\PHP_VERSION_ID < 80600) {
 
 Applies to functions, classes, interfaces, traits, enums and file-level `const` (as `\define()` inside
 the check). Nested gates nest, outermost first. Guarded functions go after the ungated ones in
-`_functions.php`; a guarded class gets its own file with its own copy of the check. If the same
-function/type name is also declared under another version gate that the minimum does not satisfy,
-only the declaration matching the minimum is compiled and it is emitted without a check.
+`_functions.php`; a guarded class gets its own file with its own copy of the check. For a function or
+type, if the same name is also declared under another version gate that the minimum does not satisfy,
+only the declaration matching the minimum is compiled and it is emitted without a check. A class or
+trait method keeps every `#[\Tyhp\Php]` sibling that is true for some version at or above the floor:
+the PHP class has one method, each body sits in `if (\PHP_VERSION_ID …)`, and `package.tyhpdef` lists
+every sibling. A sibling that is true for no version at or above the floor is left out.
 `.tyhpdef` gates are never emitted.
 
 ### `declare(php="…")`

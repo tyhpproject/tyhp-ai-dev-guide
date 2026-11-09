@@ -4,20 +4,32 @@ Signatures follow the intended public API (`.tyhpdef` of each package). PHP buil
 `tyhpdef/php`; scalar methods from `tyhp/core`; optional extension APIs from `tyhpdef/php-ext-*`.
 Compile-time `#[\Tyhp\EraseGeneric]` (`#[\Tyhp\NoEmit]`) opts properties out of Mechanism C tracking.
 `#[\Tyhp\GenericRuntime]` is a **runtime-visible** stamp on every emitted generic class, method, and
-function (`erased`, `layouts: [1]`; `factory`/`binder` only when helpers exist). Tyhp **foreign**
-compiled-library sites and hand-written PHP use `\Tyhp\Generic::bind(...)(...)`; same-compilation
-Tyhp still emits factories/binders directly when tracked. `async`-marked
+function. An erased callable, a class, and a type alias are `layouts: [1]`. A non-erased callable
+that is not `#[\Tyhp\InferGeneric]` is `layouts: [2]` and its `binder` is the declared name
+(`Json::decode($T)($json)`). `#[\Tyhp\InferGeneric]` keeps the value signature and a
+`name__tyhpGeneric` companion (`layouts: [1]`). `\Tyhp\Generic::bind` binds both layouts and takes
+`\Tyhp\TypeLike|string`. PHP calls `Box::new(T::int)(42)` and `Box::type(T::int)`. A Tyhp `new` of a
+foreign class emits `Generic::bind`. A foreign layout-2 call emits `name(types)(args)`. `async`-marked
 functions, methods, closures, and signatures declare the **settled** type `R` (read as `__Awaited<R>`); the compiled call
 returns `\Tyhp\Promise<__Awaited<R>>` until you `await` it. Callable
 shapes are `callable(…): R`. `\Closure` is `\Closure<callable(...): mixed, TThis, TScope>` (class type arguments).
 
 **`\Tyhp\Generic`** — PHP and foreign-library interop. `bind()` does not construct.
 ```
-static bind(mixed $target, ?Type ...$typeArguments): mixed
+static bind(mixed $target, TypeLike|string|null ...$typeArguments): mixed
+// layouts 1 and 2. Type::arg normalizes each argument. BuiltIn cases and class-strings are accepted
 // class name → Generic binder; callable → \Closure taking the value arguments
+// known class from PHP: Box::new(T::int)(42), Box::type(T::int). bind when the class or callable is chosen at runtime
 // in Tyhp code the result is `mixed`: prefer `new Box<int>(…)` over `bind(Box::class, …)->new(…)`
-// binder: new(mixed ...$args): object  ≡  __invoke(mixed ...$args): object   (named arguments forwarded)
-// each binder constructs once: a second new()/call throws \LogicException
+// binder: new(mixed ...$args): object  ≡  __invoke(mixed ...$args): object   (named arguments forwarded; both eager)
+// ghost(mixed ...$args): object — same constructor arguments, same one-shot guard
+//   8.4/8.5 build: newLazyGhost. Tracked: __initGenerics__tyhpGeneric then __construct on that instance.
+//     Erased / no factory: __construct only. No constructor and no args: do not call __construct.
+//     Args on a class with no constructor fail at the call (newInstanceArgs), same as new.
+//     If PHP returns a normal instance (no stored property), ghost() runs the initializer before returning.
+//   8.2/8.3 build: same as new(). Not lazy. 804/805 emit newLazyGhost and no PHP_VERSION_ID; 802/803 emit only newWithArgs.
+//   callable bind() is a Closure and has no ghost
+// each binder constructs once: a second new()/ghost()/call throws \LogicException
 // erased class → new $class(...); tracked class → named factory(types then ctor args)
 // erased callable → Closure::fromCallable (by-ref preserved)
 // missing GenericRuntime / unsupported layouts → InvalidTypeException
@@ -25,36 +37,55 @@ static wrapCallable(\Closure $target, \Closure $factory): \Closure   // compiler
 // $factory(fn(\Closure $target): \Closure) builds the converting wrapper; result ≡ $factory($target)
 // bind() on the result binds $target and re-applies $factory (conversions survive); non-Closure factory result → \InvalidArgumentException
 // bind() on any other anonymous Closure → \InvalidArgumentException
+// ext-tyhp (loaded name tyhp, phpversion('tyhp') >= 0.1.0, once per process): bindGet on entry, bindPut only for a \Closure result. A class bind is not cached. Missing or older is ignored, no warning. The bind stays in PHP.
+```
+
+**`\Tyhp\Lazy`** — PHP 8.4 lazy objects. `final`, private constructor. `T` on `ghost` / `proxy` / `reset` / `preset` is the class only; those methods do not bind that class's type arguments. `ghost` is binder-first: `Lazy::ghost(\App\User::class)($initializer)`. `proxy` and `reset` are `#[\Tyhp\InferGeneric]` (plain calls; explicit types use `proxy__tyhpGeneric` / `reset__tyhpGeneric`). The 8.4 and 8.5 builds call reflection and contain no `\PHP_VERSION_ID`. The 8.2 and 8.3 builds are eager, contain no `\PHP_VERSION_ID`, and stay eager on a newer PHP. `$options` is forwarded (`ReflectionClass::SKIP_INITIALIZATION_ON_SERIALIZE` opts out of `serialize` only; `json_encode` still initializes). Do not call `ReflectionClass::newLazyGhost` for a generic class — use `lazy new` or `Generic::bind($className, T::int)->ghost(...)`.
+```
+static ghost<T extends object>(callable(T): void $initializer, int $options = 0): T
+// 8.4+: newLazyGhost. Same instance. Initializer throw propagates; object stays lazy.
+// 8.2/8.3: newInstanceWithoutConstructor(), then $initializer. Not lazy.
+static proxy<T extends object>(callable(T): T $factory, int $options = 0): T
+// 8.4+: newLazyProxy. Result !== the factory's instance. 8.2/8.3: returns $factory($shell) immediately. Not a proxy.
+static isLazy(object $object): bool
+// 8.4+: ReflectionClass::isUninitializedLazyObject. Not ReflectionProperty::isLazy. 8.2/8.3: false.
+static initialize<T>(T $object): T
+// 8.4+: initializeLazyObject, same instance. 8.2/8.3: returns $object.
+static reset<T extends object>(T $object, callable(T): void $initializer, int $options = 0): void
+// 8.4+: resetAsLazyGhost. Pass SKIP_DESTRUCTOR yourself. 8.2/8.3: runs $initializer now. Does not become lazy.
+static preset<T extends object>(T $object, __PropertyName<T> $property, mixed $value): void
+// 8.4+: setRawValueWithoutLazyInitialization (does not initialize). 8.2/8.3: setValue.
 ```
 
 **Root functions** — plain-PHP spellings. Each is `fallback`, so an existing global of that name is left in place.
 ```
-gnrc(mixed $target, ?Type ...$typeArguments): mixed   // tyhp/core. Same signature as Generic::bind(); does not construct
-async<T extends void|mixed>(callable(): T $fn): Promise<__Awaited<T>>   // tyhp/async. Starts $fn on the event loop
-await<T extends __Awaited<void|mixed>>(Promise<T> $promise): __Awaited<T>   // tyhp/async. Suspends until $promise settles; throws the rejection
-asyncMain<T extends void|mixed>(callable(): T $fn, ?CancellationToken $token = null): __Awaited<T>   // tyhp/async. Sync entry into async; same signature as Promise::run()
+_gnrc(mixed $target, TypeLike|string|null ...$typeArguments): mixed   // tyhp/core. Forwards to Generic::bind. Type::arg normalizes each argument
+async<T>(callable(): T $fn): Promise   // namespace Tyhp. #[\Tyhp\InferGeneric]. await(async(fn (): int => 42))
+await<T>(Promise<T> $promise, ?int $timeoutMs = null, ?CancellationToken $token = null): mixed   // namespace Tyhp. #[\Tyhp\InferGeneric]. Same wait as $promise->wait()
+_async / _await / _asyncMain   // fallbacks, #[\Tyhp\InferGeneric], companions name__tyhpGeneric. _asyncMain is Promise::run
 ```
 
 **`\Tyhp\Promise<TReturn extends __Awaited<void|mixed> = __Awaited<mixed>>`** — *`_async`/`_await` are
-compiler-emitted. Tyhp code uses the `async` / `await` keywords; plain PHP uses the root functions above.* `TReturn` is always a settled type (TYHP4373 for `Promise<Promise<T>>`
+compiler-emitted. Tyhp code uses the `async` / `await` keywords. PHP calls `\Tyhp\async` / `\Tyhp\await` and `$promise->wait`.* `TReturn` is always a settled type (TYHP4373 for `Promise<Promise<T>>`
 or an unconstrained `T`); declare your own generics as `T extends __Awaited<void|mixed>`.
 ```
 static resolve<T extends __Awaited<void|mixed>>(?T $value = null): Promise<T>   // a Promise argument is returned unchanged (typed promise arguments: use resolve<mixed>)
 static resolved<T extends void|mixed = void>(?T $value = null): Promise<__Awaited<T>>  // always a new, already-fulfilled promise; a Promise $value is adopted: resolved<Promise<int>>($p) is Promise<int>
-static reject<T extends __Awaited<void|mixed> = void>(Throwable $reason): Promise<T>   // alias of rejected()
-static rejected<T extends void|mixed = void>(Throwable $error): Promise<__Awaited<T>>
-// pass the type argument explicitly: Promise::resolved<int>(1), Promise::rejected<string>($e)
-static withResolvers<T extends void|mixed>(): Deferred<__Awaited<T>>   // promise settled from outside (also the way to get one from plain PHP)
+static reject<T extends __Awaited<void|mixed> = void>(Throwable $reason): Promise<T>   // binder-first alias of rejected(): Promise::reject()($e)
+static rejected<T extends void|mixed = void>(Throwable $error): Promise<__Awaited<T>>  // binder-first: Promise::rejected()($e)
+// InferGeneric plain calls infer T: Promise::resolved(1), $p->then(fn (int $v): string => (string) $v), Promise::all([$a, $b])
+// explicit type arguments on those methods use the name__tyhpGeneric companion
+static withResolvers<T extends void|mixed>(): Deferred<__Awaited<T>>   // binder-first: Promise::withResolvers(T::int)()
 static yield(): Promise<void>      static yieldTick(): Promise<void>   // cooperative yield / yield past the timer phase
 static run<T extends void|mixed>(callable(): T $fn, ?CancellationToken $token = null): __Awaited<T>   // blocking sync entry point; returns the settled value, rethrows a rejection
 // T is inferred: Promise::run(async fn(): int => await f()) is int; a cancelled token ends the whole loop (OperationCancelledException)
 async static delay(int $ms, ?CancellationToken $token = null): void
 async static all<T extends __Awaited<void|mixed> = mixed>(array<Promise<T>> $ps, ?CancellationToken $token = null): array<T>   // keys preserved; assign to array<T>, not array<int,T>
-async static allSettled<T extends __Awaited<void|mixed> = mixed, K extends int|string = int|string>(array<K, Promise<T>> $ps): array<K, PromiseSettledResult<T>>  // no cancellation; JS {status,value,reason}
+async static allSettled<T extends __Awaited<void|mixed> = mixed, K extends int|string = int|string>(array<K, Promise<T>> $ps): array<K, PromiseSettledResult<T>>  // binder-first: Promise::allSettled()($ps). no cancellation; JS {status,value,reason}
 async static race<T extends __Awaited<void|mixed>>(array<Promise<T>> $ps, ?CancellationToken $token = null): __Awaited<T>
 async static any<T extends __Awaited<void|mixed>>(array<Promise<T>> $ps, ?CancellationToken $token = null): __Awaited<T>
 static timeout<T extends __Awaited<void|mixed>>(Promise<T> $p, int $ms, ?CancellationToken $token = null): Promise<__Awaited<T>>   // rejects TimeoutException; does not stop the operation
-async static batch<I, R extends __Awaited<void|mixed>>(array<I> $items, callable(I): Promise<R> $fn, int $concurrency = 5, ?CancellationToken $token = null): array<int, R>
+async static batch<I, R extends __Awaited<void|mixed>>(array<I> $items, callable(I): Promise<R> $fn, int $concurrency = 5, ?CancellationToken $token = null): array<int, R>  // binder-first: Promise::batch()($items, $fn)
 // batch/array_map callbacks: write fn(I $x): Promise<R> => $svc->load($x), so R is inferred from the declared Promise<R>
 async static fromGenerator(Generator $gen): mixed                      // no async generators
 static whenAll<T extends __Awaited<void|mixed> = mixed>(Promise<T> ...$ps): Promise<array<int|string, T>>   // variadic form of all()
@@ -66,7 +97,8 @@ async then<R>(callable(TReturn): R $onOk, ?callable(Throwable): R $onErr = null)
 catch(callable(Throwable): TReturn $onErr): Promise<TReturn>
 async finally(callable(): void|mixed $onFinally): TReturn               // a void callback may be fn(): void => cleanup()
 async continueWith<R>(callable(?TReturn, ?Throwable): R $k): R
-wait(int $timeoutMs = -1): mixed          getResult(): TReturn        getState(): PromiseState
+wait(?int $timeoutMs = null, ?CancellationToken $token = null): mixed   // same wait as await($this, …); null or negative timeout = no deadline
+getResult(): TReturn        getState(): PromiseState
 isCompleted(): bool   isFulfilled(): bool   isFaulted(): bool   getError(): ?Throwable
 // enum PromiseState: string { Pending | Fulfilled | Rejected }
 ```
@@ -86,10 +118,12 @@ closure to unregister). *(A token cannot be cancelled directly — cancel throug
 
 **`\Tyhp\DisposableScope` (IsDisposable)**: `static create(): DisposableScope` ·
 `using(IsDisposable|AsyncIsDisposable $r): mixed` · `release(IsDisposable|AsyncIsDisposable $r): void`
-· `dispose(): void`. The compiler creates one for `:=` (disposed in reverse order when the function returns; a `:=` in a nested block is disposed when that block ends).
+· `dispose(): void`. The compiler creates one for `:=` (disposed in reverse order when the function returns; a `:=` in a nested block is disposed when that block ends). `disposeAll` skips an uninitialized lazy object and still disposes an initialized one.
 
 **`\Tyhp\DisposableHelper`**: `async static dispose(IsDisposable|AsyncIsDisposable ...$disposables): void`
-(reverse order; several failures throw `AggregateException`).
+(reverse order; several failures throw `AggregateException`). Skips an uninitialized lazy object, same as `DisposableScope`.
+
+Both helpers use one `isUninitializedLazyObject` for every build: `false` when `\PHP_VERSION_ID < 80400`, otherwise `call_user_func` on `ReflectionClass::isUninitializedLazyObject` (the PHP 8.2 reflection signatures omit that method). They do not call `\Tyhp\Lazy::isLazy`. `using` / `using await` emit the same check directly (`\PHP_VERSION_ID` only when `output.phpVersion` is below 8.4).
 
 **Contracts**: `\Tyhp\Contracts\IsDisposable { dispose(): void }` ·
 `AsyncIsDisposable { disposeAsync(): Promise<void> }` ·
@@ -136,7 +170,10 @@ never() array() object() callable() iterable() resource()`, plus `union(self ...
 Declared types: `parse(string $spelling): self` reads the `__toString()` format (`?App\Post`,
 `array<string, App\Post>`, `App\Table<App\Blog>`, `int|string`, `struct App\Address`; a leading `\` is
 optional; a name registered with `register()` resolves through `ref()`; invalid spellings throw
-`InvalidTypeException`). `fromProperty(string|object $class, string $property): self` is the declared
+`InvalidTypeException`). When `ext-tyhp` is loaded at `0.1.0` or newer, `is` calls `\Tyhp\Ext::typeIs`
+and returns that bool. `null` runs the PHP walk. `parse` calls `typeParse` and builds `Type` objects from
+the graph. `null` uses the PHP parser. A missing or older module is ignored, with no warning.
+`fromProperty(string|object $class, string $property): self` is the declared
 Tyhp type of a property: the compiler stamps `#[\Tyhp\PropertyType('…')]` on properties and promoted
 constructor parameters whose PHP hint loses type arguments, struct types, or source type aliases;
 without a stamp it is the reflected PHP type (`mixed` when untyped). `$class` may be a generic spelling,
@@ -157,6 +194,7 @@ Object-shape fluent chain: `shape(?string $name = null)->method(string $name)->p
 arrays, always `JSON_THROW_ON_ERROR`; invalid JSON throws `\JsonException`; a value that is not an
 object, has a wrongly typed field, or lacks a required field (neither nullable nor defaulted) throws
 `IncompatibleTypeException`. Extra keys are kept; defaults are not applied to absent fields.
+`decode` has no separate `ext-tyhp` entry. It checks the value with `Type::is`.
 `static tryDecode<T>(string $json, T &$out, int $depth = 512, int $flags = 0): bool` — same rules;
 writes `$out` and returns `true` on success, otherwise leaves `$out` unchanged and returns `false`.
 String extensions `$json->jsonDecodeAs<T>()` / `$json->jsonTryDecodeAs<T>(T &$out): bool` wrap those
@@ -241,6 +279,18 @@ nested arrow `fn`, `new`, `instanceof`/`is`, int/float/string literals (no inter
 `match`, `await`, `function () {}` closures, array spread, by-reference/variadic/defaulted nested `fn`
 parameters, first-class callables, shell commands, string interpolation, …) is **TYHP4322**, which names the construct; non-`fn` arguments are **TYHP4320** (`PropertyPath`) / **TYHP4323**
 (`Expression`); an `Expression` of another callable shape is **TYHP4010**.
+`tyhp build` emits `\Tyhp\Expr::param(...)->…->backedBy(fn)` or `\Tyhp\PropertyPath::on(...)->…->backedBy(fn)`
+for an inline `fn`. A parameter typed `Expression` or `PropertyPath` is emitted as
+`\Tyhp\Expression|\Closure` or `\Tyhp\PropertyPath|\Closure`. The value body calls `fromClosure` when the
+argument is a `\Closure`. A promoted, by-ref, variadic, property-hook, or inline-closure parameter, a union
+with a type other than `null`, and `#[\Tyhp\PhpType]` keep the spelled type. PHP packages build trees with `_expr` / `_path` /
+`Expression::of` / `PropertyPath::on`. That fluent form is recommended for speed and stability whether or
+not `ext-tyhp` is installed. A caller who knows `tyhp` >= `0.1.0` is loaded may pass a closure.
+`fromClosure` uses `\Tyhp\Ext::closureTree` when the gate is open and tokenizes the source otherwise. A
+closure it cannot read throws `\InvalidArgumentException` on both paths, including a closure with a return
+type PHP checks (`: bool`) or a `use` clause. Write an arrow function, or a `function` whose body is one
+`return`, with no declared return type. `PropertyPath::fromClosure` needs one parameter and a property chain. `Expression::lambda` and `PropertyPath::from` keep the closure as the
+executable half of a tree the caller already built.
 
 **`\Tyhp\Parallel` / `ParallelTask<T>`** (`tyhp/parallel`) — process pool, not fibers.
 A CLI program calls `start()` before opening database connections and hosts the pool
@@ -345,11 +395,11 @@ type PdoOptions = struct { string $dsn; ?string $username; ?string $password; ar
 DbResult: readonly array<int, array<string, mixed>> $rows, int $affectedRows, ?string $lastInsertId
     count() · first(): ?array<string, mixed> · scalar(): mixed · rowsAs<T extends struct>(): array<int, T> · firstAs<T extends struct>(): ?T
 
-// Offload / Dns — blocking work in a tyhp/parallel worker when available, otherwise inline.
+// Offload — blocking work in a tyhp/parallel worker when available, otherwise inline.
 interface OffloadJob<T extends void|mixed = mixed> { run(): T }
 async static Offload::runAsync<T>(OffloadJob<T> $job, ?CancellationToken $token = null): T   // T inferred: await Offload::runAsync(new MyJob())
 static Offload::usesWorkers(): bool
-static Dns::resolveAsync(string $host, ?CancellationToken $token = null): Promise<array<int, string>>   // IPv4 and IPv6 addresses
+static Dns::resolveAsync(string $host, ?CancellationToken $token = null): Promise<array<int, string>>   // IPv4 then IPv6. `tyhp` module >= 0.1.0: the lookup runs on a thread. Missing or older: Offload.
 ```
 PostgreSQL `int2`/`int4`/`int8`/`oid` columns arrive as `int`, `float4`/`float8` as `float`, `bool`
 as `bool`; MySQL integer and floating-point columns arrive as `int` or `float` (`BOOLEAN` is
@@ -358,9 +408,15 @@ as `bool`; MySQL integer and floating-point columns arrive as `int` or `float` (
 rolls back and rethrows when any statement fails. An `OffloadJob` follows the `ParallelTask` rules
 when workers are used: it must be serializable and autoloadable by the worker, and its result
 must be serializable. Without workers (no `tyhp/parallel`, or `Parallel::isAvailable()` is
-false), `Offload`, `PdoConnection`, and `Dns` block the event loop while they run. With workers, a
-failure inside the job (including a `Dns` lookup that resolves nothing) rejects with
-`ParallelException`; without workers `Dns` rejects with `IoException` and `Offload` rethrows what the
+false), `Offload` and `PdoConnection` block the event loop while they run. `Dns` blocks in that same
+case when the `tyhp` module is missing or older than `0.1.0`. With the module, the lookup runs on a
+thread and the event loop waits on its pipe. An unresolved host rejects with `IoException` and
+`Could not resolve host {host}.` when `Offload::usesWorkers()` is false, or with `ParallelException` whose
+remote class is `IoException` when `usesWorkers()` is true, on both paths. The `ParallelException` message
+from `Offload` may also name the worker file and line. A cancelled token rejects with
+`OperationCancelledException`. With workers, a
+failure inside an `Offload` job rejects with
+`ParallelException`; without workers `Offload` rethrows what the
 job threw.
 
 **`\Tyhp\EventLoop`** (low-level; you rarely touch it directly): `static getInstance()`, `static resetInstance()`,

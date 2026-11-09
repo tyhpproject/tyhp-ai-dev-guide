@@ -14,3 +14,4 @@
 - `05-php-interop.md` — php interop
 - `06-examples.md` — examples
 - `07-runtime-api.md` — runtime api
+- `08-rhetoric.md` — tyhp/rhetoric (Tyhp callers, then a PHP section)

@@ -26,7 +26,8 @@
 `tyhp composer sync`). Incremental state: `tyhp-build-state.json` under the project cache directory (`cache-dir`).
 Library `"type": "library"` always writes `package.tyhpdef` with the same Tyhp surface as source
 (attributes, class-level `type`, in-package `global use`, `#[\Tyhp\GenericRuntime]` on every emitted
-generic; foreign consumers use `\Tyhp\Generic::bind`) and additive-merges
+generic; a foreign layout-2 call emits `name(types)(args)` and a foreign class `new` emits
+`\Tyhp\Generic::bind`) and additive-merges
 `extra.tyhp.package` onto publish-directory `composer.json`. `internal`
 is omitted. Author-only `require-dev` owners → `extern`; `extra.tyhp.require` / `require` → FQN.
 

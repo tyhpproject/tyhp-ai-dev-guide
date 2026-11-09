@@ -51,8 +51,9 @@ function array_find(array $array, callable $callback): mixed;
   the whole compilation. A compiled library copies in-package `global use` that it authored into
   `package.tyhpdef`. File-level `use` is not copied. `use extension { … hide; … insteadof; }` as in [§12](12-extensions.md).
 - **`#[\Tyhp\GenericRuntime]`** is a real PHP attribute (not `NoEmit`) stamped on every emitted
-  generic class/method/function (`erased`, `layouts: [1]`, `factory`/`binder` only when helpers
-  exist, optional `compiler:`). Foreign consumer sites emit `\Tyhp\Generic::bind(...)(...)`.
+  generic class/method/function (`erased`, `layouts` `[1]` or `[2]`, `factory`/`binder` only when helpers
+  exist, optional `compiler:`). A foreign layout-2 call emits `name(types)(args)`; a foreign class
+  `new` emits `\Tyhp\Generic::bind(...)(...)`.
   Overlay tyhpdefs that omit the stamp keep erase / inline. Unknown layouts → `TYHP5023`.
   `#[\Tyhp\EraseGeneric]` (`NoEmit`) opts properties out of Mechanism C tracking.
 - **PHP version gates** (`declare(php="…")` / `#[\Tyhp\Php]`) — [§30](30-php-version-gating.md).

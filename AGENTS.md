@@ -6,7 +6,7 @@ you only need the deltas. These docs are structured so you load **only the secti
 1. **`QUICK_GUIDE.md`** — the index. One line per feature with an analogy to a language you know
    (C#/TS/…) and a `→` pointer to the file that explains it in full.
 2. **`guide/`** — the language reference, one file per topic (`01-mental-model.md` …
-   `30-php-version-gating.md`). See `guide/00-index.md` for the list.
+   `31-lazy-objects.md`). See `guide/00-index.md` for the list.
 3. **`handbook/`** — project setup, autoloading, CLI/build, PHP interop, testing, worked examples,
    and runtime API signatures (`01`…`07`). See `handbook/00-index.md`.
 

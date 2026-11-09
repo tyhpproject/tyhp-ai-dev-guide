@@ -14,11 +14,11 @@ Output is **this repository root** (no extra directory prefix):
 
 ```
 AGENTS.md  CLAUDE.md  QUICK_GUIDE.md  SKILL.md  README.md  REGEN.md
-guide/     00-index.md + 01-…-30-*.md   (the dense language delta, one file per section)
-handbook/  00-index.md + 01-…-07-*.md   (setup/CLI/interop/testing/examples/runtime API)
+guide/     00-index.md + 01-…-31-*.md   (the dense language delta, one file per section)
+handbook/  00-index.md + 01-…-08-*.md   (setup/CLI/interop/testing/examples/runtime API, rhetoric)
 ```
 
-The content is authored as two logical documents (the **guide**, ~30 sections, and the **handbook**,
+The content is authored as two logical documents (the **guide**, ~31 sections, and the **handbook**,
 ~7 sections) but written out **one file per section** so an agent loads only what it needs.
 `QUICK_GUIDE.md` / `SKILL.md` are the one-line-per-feature index whose `→` pointers name the exact section files;
 `AGENTS.md`/`CLAUDE.md` are the entry points.
@@ -47,7 +47,7 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 ## The prompt (paste to an agent that can read the sibling compiler and runtime-src clones and write this repository)
 
 > **Task:** Regenerate the Tyhp AI dev docs in this repository (English). Author the language guide
-> (~29 sections) and the handbook (~7 sections), but **write one file per section** into
+> (~31 sections) and the handbook (~7 sections), but **write one file per section** into
 > `guide/NN-slug.md` and `handbook/NN-slug.md`; also (re)produce
 > `QUICK_GUIDE.md`, `AGENTS.md`, `CLAUDE.md`, and a `00-index.md` in each folder. Overwrite existing
 > files at the repository root. Produce **English only**.
@@ -108,7 +108,7 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >    contravariant + return covariant; `\Closure` `TThis`/`TScope` invariant).
 > 7. Generics (erased from signatures): declaration, `extends` constraints, `= Type` defaults (note defaults not yet
 >    applied — pass all type args), generic args on `extends`/`implements`, erasure rules,
->    compiled libraries stamp `#[\Tyhp\GenericRuntime]` on every emitted generic (`erased` + `layouts: [1]`; `factory`/`binder` only when helpers exist; foreign sites use `\Tyhp\Generic::bind`; overlays that omit the stamp keep erase/inline; `#[\Tyhp\EraseGeneric]` opts properties out of tracking),
+>    compiled libraries stamp `#[\Tyhp\GenericRuntime]` on every emitted generic (erased callables, classes, and type aliases are `layouts: [1]`; a non-erased callable that is not `#[\Tyhp\InferGeneric]` is a layout-2 binder under the declared name, `Json::decode($T)($json)`; `#[\Tyhp\InferGeneric]` keeps the value signature and a `name__tyhpGeneric` companion stamped `layouts: [1]`; explicit type arguments use the companion; `Generic::bind` binds layouts 1 and 2 with `\Tyhp\TypeLike|string`; PHP calls `Box::new(T::int)(42)` and `Box::type(T::int)`, `new()` matches constructor visibility and is not `final`, abstract classes get `type()` only, interfaces and traits get neither; a Tyhp `new` of a foreign class emits `Generic::bind`; a foreign layout-2 call emits `name(types)(args)`; TYHP4404 magic methods, TYHP4405 overriding a non-generic method, TYHP4406 a method named `new` or `type`, TYHP4407 `InferGeneric` on a type parameter no argument can supply, a by-ref parameter is not a source, TYHP4408 warning on a non-generic declaration; `ArrayAccessShape::offsetGet` and `offsetSet` are not generic; overlays that omit the stamp keep erase/inline; `#[\Tyhp\EraseGeneric]` opts properties out of tracking),
 >    `#[\Tyhp\PropertyType('…')]` on properties / promoted params whose PHP hint is lossy (type args, structs, source aliases; not when a type parameter appears; written stamps replaced) read by `\Tyhp\Type::fromProperty()` + `elementType()`/`typeArguments()`,
 >    `array<T>`/`array<K,V>`, `iterable<…>`, callable shapes `callable(…): R`
 >    (`callable(): bool` is 0-arg; `callable(...): TReturn` is an `extends`-only any-arity bound;
@@ -134,7 +134,10 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     via `global use extension \Tyhp\StringExtensions` (no per-file import; local `use` only to
 >     adapt; `TYHP4169` if redundant); tyhpdef class-body members are thin `=>` mappings that splice
 >     unless `#[\Tyhp\GenericRuntime]` is present (foreign sites use `\Tyhp\Generic::bind`); compiled libraries copy in-package
->     `global use extension` into `package.tyhpdef`).
+>     `global use extension` into `package.tyhpdef`). The optional PHP module is `ext-tyhp`
+>     (`pie install tyhp/ext-tyhp`, loaded name `tyhp`, `phpversion('tyhp') >= 0.1.0`). It is not required.
+>     Installing it is recommended. A missing or older module is ignored with no warning. `tyhp/core`,
+>     `tyhp/lambda`, and `tyhp/io` suggest it and do not require it.
 > 13. async/await (Fiber/Promise; `\Tyhp\Promise::_async/_await`; outer return `\Tyhp\Promise`; **declared
 >     async return type is the settled type** (`__Awaited<R>`), `Promise<T extends __Awaited<void|mixed>>`, TYHP4373; no
 >     async generators; Promise API surface incl. `then` overloads and `Promise::run` typing; **cancellation** via `CancellationToken(Source)` +
@@ -157,10 +160,14 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     `$this->p` / `$obj->p` / nested `$a->b->c` / `self::$p` / `Foo::$p` narrow like variables,
 >     assign/`unset` clears the path and sub-paths, method-call results do not). Closure/Fiber
 >     generic shapes: `as`, not `is`.
-> 17. Compile-time helpers (`nameof`, `default(T)`, `typeof` takes a **type** — `typeof(int)`,
+> 17. Compile-time helpers (`nameof(User::$name)` is `__PropertyName<User>` and a constant
+>     expression, so an attribute parameter of that type accepts it and rejects a name that is
+>     not a property of `User`; `User::class` is `__ClassName<User>`; `default(T)`, `typeof` takes a **type** — `typeof(int)`,
 >     `typeof(Optional<int>)`, source alias → factory; value path is `\Tyhp\Type::of($value)`;
 >     `variable_exists` → `\array_key_exists`).
-> 18. String-as-type features (symbol-name types list + existence-check narrowing; template string
+> 18. String-as-type features (symbol-name types list + existence-check narrowing;
+>     `__PropertyName<T>` accepts `nameof(T::$prop)` and a literal property name;
+>     `__ClassName<T>` accepts `T::class`; template string
 >     types + quantifiers; holes may name aliases (`${ApiMethod}`, composing template aliases such as
 >     `"${ApiMethod} ${ApiPath}"`; unknown names are errors; a hole must be a string, `int`, or
 >     `float` type, literal, or union — `${array}` / `${bool}` / `${mixed}` / `${$x}` / an inline
@@ -184,9 +191,18 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     body rules: nested arrow `fn` (params typed from the callee incl. a `PropertyPath` param, may read outer params, shadowing by name,
 >     no by-ref/variadic/default params), list/keyed array literals (spread rejected), TYHP4322 for a class in a
 >     variable (`dynamic class`), a variable member name (`dynamic member`), named/unpacked call args, `?->` method calls with
->     PHP chain short-circuit; nodes `LambdaExpression` / `ArrayExpression` / `NullSafeMethodCallExpression`;
+>     PHP chain short-circuit; an extension method call stays `MethodCallExpression` (the body is not substituted into the tree; `compile()` still runs it);
+>     nodes `LambdaExpression` / `ArrayExpression` / `NullSafeMethodCallExpression`;
 >     parameter / property node `->type` is the full declared type as a `\Tyhp\Type::parse()` spelling (`App\Table<App\Blog>`, `array<App\Post>`);
 >     `ExpressionSerializer::shapeKey` / `shapeParameters` for per-shape translation caches).
+>     `tyhp build` emits `backedBy` chains for an inline `fn`.
+>     A parameter typed `Expression` or `PropertyPath` is `\Tyhp\Expression|\Closure` or `\Tyhp\PropertyPath|\Closure`
+>     with a `fromClosure` prologue, except a promoted, by-ref, variadic, property-hook, inline-closure, or
+>     `#[\Tyhp\PhpType]` parameter, or a union with a type other than `null`. PHP packages use `_expr` / `_path` /
+>     `Expression::of` / `PropertyPath::on`. A caller who knows `ext-tyhp` >= `0.1.0` is loaded may pass a closure.
+>     `fromClosure` uses `closureTree` or tokenizes the source and throws `\InvalidArgumentException` for a closure
+>     it cannot read, including a return type PHP checks such as `: bool` and a `use` clause.
+>     `PropertyPath::fromClosure` needs one parameter and a property chain.
 > 22. Declarations — deltas vs PHP (declaration-site generics on class/interface/trait/enum/function;
 >     **constructor return type `: void` (optional; omitted ≡ `: void`) / `: parent(...)`**; `async` modifier; return-type guards;
 >     top-level overload signatures; trait property alias `$prop as $x`; `internal` omits from
@@ -219,7 +235,12 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     `.tyhp`, first-registered-wins).
 > 25. Runtime packages table (`tyhpdef/php` always-present 8.2–8.5 builtins;
 >     `tyhpdef/php-ext-*` optional extensions, Composer `php: >=8.2`, no per-minor forks; `tyhp/core`
->     (`PhpType`, `GenericRuntime` / `PropertyType` runtime-visible, `EraseGeneric` compile-only, `Generic::bind`, `ArrayAccessShape`, scalar methods) / `decimal` / `async` / `lambda`, key symbols).
+>     (`PhpType`, `GenericRuntime` layouts 1 and 2 / `InferGeneric` / `PropertyType` runtime-visible, `EraseGeneric` compile-only, `Type` constants `T::int` as `BuiltIn`, `TypeLike` is `toType` and `or` only, `Generic::bind` takes `TypeLike|string`, `Box::new` / `Box::type`, `ArrayAccessShape` with non-generic `offsetGet` / `offsetSet`, scalar methods) / `decimal` / `async` (`Tyhp\async`, `Tyhp\await`, `$promise->wait`; InferGeneric plain calls vs binder-first `reject` / `withResolvers` / `allSettled` / `batch`) / `lambda` (`_expr` / `_path` companions, `Expression::of` / `PropertyPath::on` InferGeneric, `lambda` / `from` / `backedBy` binders, `fromClosure`, which reads the closure through the `tyhp` module at >= `0.1.0` and tokenizes its source otherwise; PHP packages keep the fluent calls), key symbols).
+>     `ext-tyhp` is suggested by `tyhp/core`, `tyhp/lambda`, and `tyhp/io` and required by none (`pie install tyhp/ext-tyhp`, loaded name `tyhp`).
+>     DNS uses that module at `0.1.0` or newer and `Offload` otherwise. An unresolved host is `IoException`
+>     (`Could not resolve host {host}.`) or, when `Offload::usesWorkers()` is true, `ParallelException` whose
+>     remote class is `IoException`, on both paths. The `ParallelException` message from `Offload` may also name
+>     the worker file and line. A cancelled token is `OperationCancelledException`.
 >     `php-ext-decimal` is PECL Decimal, not `tyhp/decimal`. json/hash/libxml stay in `tyhpdef/php` only.
 >     Package tests run `../tyhp-runtime-src/packages/test-all-tyhpdef.sh`.
 > 26. Build, output layout & CLI: `tyhp.json` keys, including `emit.docblocks` (`lossy-only` default,
@@ -253,7 +274,8 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     `package.tyhpdef`). **Derive strictly from the current code.**
 > 29. PHP-mapping reference table (`<?= expr ?>` in `.tyhp` → `echo expr;`; a lossy signature also
 >     emits a PHPStan/Psalm tag under `emit.docblocks`; source `type X = …` → factory `function X(): \Tyhp\Type`;
->     hints still expand; tyhpdef aliases inline unless `#[\Tyhp\GenericRuntime(aliasFactory: …)]`).
+>     hints still expand; tyhpdef aliases inline unless `#[\Tyhp\GenericRuntime(aliasFactory: …)]`;
+>     a layout-2 call emits `name(types)(args)`; `#[\Tyhp\InferGeneric]` bare call stays plain and explicit type arguments emit `name__tyhpGeneric`; PHP `Box::new(T::int)(42)` / `Box::type(T::int)`; a foreign class `new` still emits `Generic::bind`; PHP `await(async(...))` and `$promise->wait()`).
 > 30. PHP version gating: `declare(php="…")` (alone in that declare; file `;` vs `{ }` block);
 >     `#[\Tyhp\Php]` (illegal on `struct`/`extension`); Composer constraints vs `output.phpVersion`
 >     (unset → `8.2` + TYHP4306); disjoint same-name variants; `output.phpVersion` is the minimum PHP; gates that hold for only some versions at or above it emit `\PHP_VERSION_ID` checks, `declare(ext)` emits `\extension_loaded`.
@@ -264,6 +286,16 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >     Engine-attribute classes stay gated in tyhpdef (`Deprecated` ≥ 8.4, `NoDiscard` /
 >     `DelayedTargetValidation` ≥ 8.5) but Tyhp still runs Deprecated / NoDiscard checks below those
 >     minors; Override-on-property and DelayedTargetValidation TARGET skip follow phpVersion ≥ 8.5.
+> 31. Lazy objects: `lazy new Class(args)` / `lazy new Class<T>(args)` only (`lazy` is a keyword only
+>     before `new`); arguments run at the expression, the constructor runs later on that instance when
+>     `output.phpVersion` ≥ 8.4, ordinary `new` below that; a class with no stored instance property
+>     stays eager and warns `TYHP4403`; `TYHP4402` for an internal class other than `stdClass`, a
+>     class extending one, or a non-class; a tracked generic is lazy and binds its type arguments;
+>     `\Tyhp\Lazy` (`ghost` is binder-first `Lazy::ghost(User::class)($initializer)`, `proxy` and `reset` are `#[\Tyhp\InferGeneric]`, `isLazy`, `initialize`, `preset`; native on the 8.4/8.5
+>     builds, eager on 8.2/8.3; `ghost` does not bind the class's type arguments); `\Tyhp\Generic::bind($className, T::int)->ghost(...)`
+>     (binds type arguments, matches `new` when the object cannot stay lazy); disposal skips an
+>     uninitialized lazy object; agents write `lazy new` or `Generic::bind($className, T::int)->ghost(...)`, not
+>     `ReflectionClass::newLazyGhost`. **Derive strictly from the current code.**
 >
 > **Output format (the split):**
 > - One file per section: `guide/NN-slug.md` (e.g. `guide/07-generics.md`) and `handbook/NN-slug.md`.
@@ -290,7 +322,7 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 >   density gains lossless (tables over prose, minimal examples, no cross-section repetition).
 >
 > **Acceptance checks before finishing:**
-> - All 30 guide + 7 handbook section files exist, are lint-clean, and each `00-index.md` lists them.
+> - All 31 guide + 8 handbook section files exist, are lint-clean, and each `00-index.md` lists them.
 > - Cross-references resolve to real sibling files; no `§`-only or line-number references remain.
 > - `QUICK_GUIDE.md` pointers name files that exist; `AGENTS.md`/`CLAUDE.md` present.
 > - Every ⚠️/"use the PHP form" claim matches the current emitter/checker behavior.
@@ -317,7 +349,7 @@ The content is authored as two logical documents (the **guide**, ~30 sections, a
 > fuller worked examples (extension, operator overload,
 > `using`/`:=`, `with`, guards, async+cancellation); and a runtime API signature reference (Promise,
 > Deferred, EventLoop, CancellationToken(Source), Contracts, DisposableScope, Decimal, Type,
-> Exceptions, Expression). Verify every tooling claim against `../tyhp/Tyhp/CLI/**`, `../tyhp/Tyhp/Config/**`, the
+> Exceptions, Expression). `handbook/08-rhetoric.md` is the `tyhp/rhetoric` package: the Tyhp material (models, contexts, queries, save, mapping, migrations, scaffold, Eloquent queries, `Sql::fn`) and a distinct PHP section a PHP developer can open without the Tyhp language pages. PHP samples call binder-first methods as `name(types)(args)` (`table(Post::class)()`, `model(Post::class)()`, `belongsTo(Blog::class)($path)`, `transaction(T::int)($fn)`, `ContextFactory::new(Context::class)()`, `EloquentQuery::query(Model::class)()`), call `entry($model)` and `\Tyhp\Expression::of` / `\_expr` as ordinary methods, and build trees with `\Tyhp\Expression::of` / `\Tyhp\Expr`. `\Tyhp\Generic::bind($target, T::int)` and `\_gnrc($target, T::int)` are for a class or callable chosen at runtime. Keep that file when regenerating; do not fold it into `07-runtime-api.md`. Verify every tooling claim against `../tyhp/Tyhp/CLI/**`, `../tyhp/Tyhp/Config/**`, the
 > emitter, and `../tyhp-runtime-src/packages/**` — **prefer each package's `.tyhpdef` for public signatures**, and
 > mark unimplemented behavior ⚠️ rather than describing the story's intent as fact.
 

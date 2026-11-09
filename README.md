@@ -22,7 +22,7 @@ git clone https://github.com/tyhpproject/tyhp-ai-dev-guide.git
 | `CLAUDE.md` | Same entry point for Claude-based tools (points to `AGENTS.md`). |
 | `SKILL.md` | Cursor Agent Skill entry point. Same compact index as `QUICK_GUIDE.md`, plus YAML frontmatter and a cherry-pick list of every `guide/` / `handbook/` topic. The repository root is the skill root. |
 | `QUICK_GUIDE.md` | One-line-per-feature **index** with cross-language analogies (C#/TS/…) and `→` pointers to the exact section file. ~1.3k tokens — cheap enough to keep always-on. |
-| `guide/` | The core language guide, **one file per section** (`01-mental-model.md` … `30-php-version-gating.md`), plus `00-index.md`. The PHP→Tyhp delta. |
+| `guide/` | The core language guide, **one file per section** (`01-mental-model.md` … `31-lazy-objects.md`), plus `00-index.md`. The PHP→Tyhp delta. |
 | `handbook/` | Setup / autoloading / CLI / interop / testing / examples / runtime-API, **one file per section** (`01`…`07`), plus `00-index.md`. |
 | `README.md` | This file. |
 | `REGEN.md` | Maintainer-only: prompt used to regenerate this repository when the language changes. End users don't run it. |

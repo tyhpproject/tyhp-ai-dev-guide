@@ -40,6 +40,8 @@ underlines; `--quiet` is one line. Unknown names may include a **did you mean**.
 | `TYHP4141` | in-place `with` on a readonly property |
 | `TYHP4400` | readonly `new … with` or `clone … with` when `output.phpVersion` is below 8.3 |
 | `TYHP4401` | `clone … with` on a `readonly class` when `output.phpVersion` is below 8.5 |
+| `TYHP4402` | `lazy new` of an internal class other than `\stdClass`, a class that extends one, or a non-class |
+| `TYHP4403` | warning: `lazy new` of a class with no stored instance property runs the constructor immediately |
 | `TYHP4300`–`TYHP4306` | PHP version gates ([§30](30-php-version-gating.md)) |
 | `TYHP4307` | `.tyhp` used an `extern` name (type / function / const) |
 | `TYHP4326` | user type listed `\Traversable`; use `\Iterator` or `\IteratorAggregate` |

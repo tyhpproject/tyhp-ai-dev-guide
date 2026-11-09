@@ -8,6 +8,9 @@ They narrow through existence checks and verify literal assignment at compile ti
 if (\class_exists($n)) { /* $n: __ClassName */ }
 if (\method_exists($o, $n)) { /* $n: __MethodName<typeof($o)> */ }
 __ClassName $c = 'App\\User';   // errors if class unknown
+__PropertyName<User> $prop = nameof(User::$name);   // also a matching literal `'name'`
+__ClassName<User> $user = User::class;
+function id<T>(): __ClassName<T> { return T::class; }
 ```
 **Template string types** — types describing sets of strings, written as a double-quoted string in
 type position; `${T}` = hole (any string-valued type, including a named alias — imported,
