@@ -25,7 +25,7 @@ use the alternative noted.
 - **Generics** — `class Box<T extends X = Def>`, like C#/TS generics. Bare `Box` is `Box<mixed>` when assigned to an instantiation (`Box` ↛ `Box<int>`, `Box<int>` → `Box`). PHP calls `Box::new(T::int)(42)` and `Box::type(T::int)`. A method that is not `#[\Tyhp\InferGeneric]` is `name(types)(args)`, as in `Json::decode($type)($json)`. Magic methods cannot take type parameters (TYHP4404); overriding a non-generic method cannot (TYHP4405); a method named `new` or `type` on a generic class is TYHP4406. `→ guide/07-generics.md`
 - **Generic collection types** — `array<K,V>`, `iterable<T>`, `callable(A, B): R`; `callable(...): R` as an `extends` bound. `\Closure<callable(A, B): R>` (class). `→ guide/07-generics.md`
 - **Type aliases** — `type Id = int;` like TS `type`; `Id()` / `typeof(Id)` is a `\Tyhp\Type` factory. `→ guide/09-type-aliases.md`
-- **Structs** — value type with typed properties only; **structural** compatibility like TS/Go (vs nominal classes). `→ guide/10-structs.md`
+- **Structs** — value type with typed properties only; **structural** compatibility like TS/Go (vs nominal classes). Construct with `new Point[x => 1, y => 2]` (empty `new Point[]`; `new Box<int>[value => 1]`; spread `new Opts[...$base, name => 'bob']`). `→ guide/10-structs.md`
 - **Utility types** — `__Partial<T>` `__Pick<T,K>` `__Record<K,V>` `__Awaited<T>` `__Nullable<T>`
   `__NonNullable<T>` `__AsReadOnly<T>` …, plus callable-keyed
   `__CallableReturnType<C>` / `__CallableParametersStruct<C>` / `__CallableParametersTuple<C>` /

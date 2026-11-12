@@ -124,8 +124,24 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >    `use function` when the factory is used; class-level `self::NameType()` /
 >    `UserService::NameType()`; tyhpdef aliases inline unless `#[\Tyhp\GenericRuntime(aliasFactory: …)]`).
 > 10. Structs (structural value type, properties-only, `extends`; struct vs class table incl. width
->     subtyping; `new`/`with`/property-access lowering to arrays; PHP sees `array`; no runtime shape
->     check; anon/`clone` gotchas).
+>     subtyping; primary construction is the bracket list `new Name[field => value]`, including empty
+>     `new Name[]`, `new Box<int>[value => 1]` and `new Box[value => 1]` (type arguments from the target
+>     type), and
+>     `new struct { … }[field => value]`; state `new Name()` and `new Name() with […]` once as the same
+>     forms; keys are property names, bare or quoted, including a keyword in key position (`class =>`),
+>     not positions; a field alias is still the property name in the list; an unkeyed entry is an error;
+>     a trailing comma is allowed, and a newline may sit between the name or `}` and `[`; spread
+>     `new Opts[...$base, name => 'bob']`: the source is a named struct, a generic struct instance, or an
+>     anonymous struct (`array`, `array<K, V>`, `mixed`, a nullable struct, and a union are errors), no
+>     extra fields (including through `extends`), field types assignable, PHP array keys match so spread
+>     cannot rename an alias (`'status_code' as $statusCode`, `0 as $arg1`), a required field is satisfied
+>     by a key or by a spread that requires or defaults it, a nullable source field without a default does
+>     not, defaults apply first and later entries override, and spread field types are checked against the
+>     generic instantiation the same way keyed values are; those rules also apply to a struct `with` list (`new Name() with`,
+>     `clone $s with`, `$s with`); emit spread as `\array_replace` (remaining defaults, then each spread
+>     and each run of keyed entries), not PHP `[...$src]`, so integer keys survive; `new Name[...] with [...]`
+>     is an error — one list; dereference with `(new Point[…])->x`; property access lowers to arrays; PHP
+>     sees `array`; no runtime shape check; anon/`clone` gotchas).
 > 11. Operator overloading (class + shorthand + `convert`; arity/`self` rules; overloadable set;
 >     left-first resolution; synthetic-method lowering).
 > 12. Extensions (block target `extension Name extends Type` or nested `extends Type { }` / `extends<T> Type { }`; `$this` implied, `&$this` only when by-ref; `self` is the block target including scalars; unions legal when every receiver alternative is a union member; header generics stay on the extension symbol; three member forms: `=>` omits the

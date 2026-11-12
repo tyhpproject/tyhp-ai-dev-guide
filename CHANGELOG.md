@@ -11,6 +11,7 @@ Notable changes to the Tyhp AI development guide (`SKILL.md`, `QUICK_GUIDE.md`, 
 
 ### Changed
 
+- `guide/10-structs.md` and `QUICK_GUIDE.md`: agents construct a struct with `new Name[field => value]` (empty `new Name[]`, `new Box<int>[value => 1]` / `new Box[value => 1]`, `new struct { … }[…]`, spread `new Opts[...$base, name => 'bob']`). `new Name()` and `new Name() with […]` are the same forms.
 - `guide/21-expression-trees.md`, `guide/12-extensions.md`, `guide/25-runtime-packages.md`, `guide/07-generics.md`, `guide/29-php-mapping.md`, `handbook/05-php-interop.md`, `handbook/07-runtime-api.md`, and `REGEN.md`: agents treat `ext-tyhp` as optional and recommended (`pie install tyhp/ext-tyhp`), keep fluent expression trees in PHP packages and pass a closure only when the process is known to have the module loaded, and expect DNS to use the `tyhp` module when it is loaded and `Offload` otherwise.
 - `handbook/07-runtime-api.md` and `handbook/08-rhetoric.md`: `_gnrc` type arguments are `TypeLike|string|null`, the same as `Generic::bind`, including `T::int`.
 - `handbook/08-rhetoric.md`: PHP calls `table(Post::class)()`, `model(Post::class)()`, `belongsTo(Blog::class)($path)`, `transaction(T::int)($fn)`, `ContextFactory::new(Context::class)()`, and `EloquentQuery::query(Model::class)()`. `entry($model)` and `Expression::of` are ordinary calls. `QUICK_GUIDE.md` and `guide/25-runtime-packages.md` name those shapes.
