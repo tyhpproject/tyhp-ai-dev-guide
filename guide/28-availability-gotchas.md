@@ -9,7 +9,10 @@ classes; `declare(php=…)` / `#[\Tyhp\Php]` / `#[\Tyhp\PhpType]`; `declare(ext=
 `declare(ext="!name")`; `fallback function` / `fallback const`; `internal` (omitted from
 `package.tyhpdef`); PHP 8.5 `|>`, `(void)`, `clone($o, […])` (lowered when
 the target is older); object shapes (`type Name = object { … }`) and `__New<T>`; HTML templates
-in a `.tyhp` file (`<?= expr ?>` is a checked `echo`, no escaping — [§2](02-files-and-tags.md)).
+in a `.tyhp` file (`<?= expr ?>` is a checked `echo`, no escaping — [§2](02-files-and-tags.md));
+`operator default(): self` on a class or enum (`default(ThatType)` is that instance; without the
+declaration, `default` of that class or enum, `default(self)`, and `default(static)` are null —
+[§17](17-compile-time-helpers.md)).
 
 **Annotate, don't assume:** every parameter/property and return type — locals infer from
 initializers (including array literals). A typed local may omit its initializer; a read

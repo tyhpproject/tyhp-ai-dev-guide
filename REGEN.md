@@ -146,7 +146,16 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >     sees `array`; no runtime shape check; `unset` of an optional field is legal (array-backed);
 >     `unset` of a class property is TYHP4158; anon/`clone` gotchas).
 > 11. Operator overloading (class + shorthand + `convert`; arity/`self` rules; overloadable set;
->     left-first resolution; synthetic-method lowering).
+>     left-first resolution; synthetic-method lowering). `operator default(): self` on a class or enum
+>     (no parameters, at most one, static body, return `self`): `default(ThatType)`, `default(self)`, and
+>     `default(static)` then have that type and call `ThatType::__tyhpDefault()` (`public static`, return
+>     `static`). Each call runs the body. The call is not a constant (TYHP4090). Without the operator,
+>     including a subclass whose parent declares it, the result is null and is a constant. Not allowed on
+>     an interface, abstract class, trait, extension, or as an abstract operator (TYHP4423). `$this` is
+>     TYHP4097. Direct `default` of the same type in the body is TYHP4424; omitting a constructor parameter
+>     whose default is `default` of that type is TYHP4425. `__tyhpDefault` is reserved in any letter case, declared operator or not (TYHP4426).
+>     Hand-written PHP may declare the method; `Type::defaultValue()` calls it only when that exact type
+>     declares it. `default(T)` for a generic parameter goes through `Type::defaultValue()`.
 > 12. Extensions (block target `extension Name extends Type` or nested `extends Type { }` / `extends<T> Type { }`; `$this` implied, `&$this` only when by-ref; `self` is the block target including scalars; unions legal when every receiver alternative is a union member; header generics stay on the extension symbol; three member forms: `=>` omits the
 >     PHP method, single-`return` brace splices and emits, multi-statement is a real method Tyhp
 >     calls; written params must be `&`; static-class lowering; `use extension`; `tyhp/core` scalars
@@ -181,7 +190,9 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >     generic shapes: `as`, not `is`.
 > 17. Compile-time helpers (`nameof(User::$name)` is `__PropertyName<User>` and a constant
 >     expression, so an attribute parameter of that type accepts it and rejects a name that is
->     not a property of `User`; `User::class` is `__ClassName<User>`; `default(T)`, `typeof` takes a **type** — `typeof(int)`,
+>     not a property of `User`; `User::class` is `__ClassName<User>`; `default(T)` (a class or enum
+>     `operator default(): self` makes `default(ThatType)`, `default(self)`, and `default(static)` that
+>     instance via `__tyhpDefault()`; otherwise null, including a subclass and a constant context; see §11), `typeof` takes a **type** — `typeof(int)`,
 >     `typeof(Optional<int>)`, source alias → factory; value path is `\Tyhp\Type::of($value)`;
 >     `variable_exists` → `\array_key_exists`).
 > 18. String-as-type features (symbol-name types list + existence-check narrowing;
@@ -302,12 +313,12 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >     first `composer require tyhp/core` often misses that transaction), `allow-plugins.tyhp/core`, and the 8.2–8.5 `output.phpVersion` lint/build
 >     matrix.
 > 27. Diagnostics: `TYHP4xxx` codes, error/warning/info, checker continues after errors (cap
->     100/file), common-codes table (include `TYHP4014` read before assignment, `TYHP4157` uninitialized property read, `TYHP4158` `unset` of a local or property, `TYHP4418` static property without an initializer, `TYHP4419` instance property not initialized after construction, `TYHP4121` empty `catch` → name `$e` and `(void)$e`;
+>     100/file), common-codes table (include `TYHP4014` read before assignment, `TYHP4157` uninitialized property read, `TYHP4158` `unset` of a local or property, `TYHP4418` static property without an initializer, `TYHP4419` instance property not initialized after construction, `TYHP4420`–`TYHP4426` `operator default`, `TYHP4121` empty `catch` → name `$e` and `(void)$e`;
 >     a comment-only body still warns; `TYHP4500` deprecated use; `TYHP4129` / `TYHP4339` Override;
 >     `TYHP4165` NoDiscard unused return); note there is no dedicated unknown-member / arg-count error.
 > 28. Availability & gotchas: "use freely" list (property hooks polyfill on 8.2–8.3, native on 8.4+;
 >     `&get` needs 8.4; **`tyhp/core` scalar catalog is use-freely** — `$s->length()` with no import);
->     "annotate don't assume" (arrays/params/returns; a typed local may omit its initializer, TYHP4014 on a read); HTML templates in `.tyhp` (`<?=` checked
+>     "annotate don't assume" (arrays/params/returns; a typed local may omit its initializer, TYHP4014 on a read); `operator default(): self` on a class or enum is use-freely (`default(ThatType)` is that instance; without the operator, `default` of that class or enum, `default(self)`, and `default(static)` are null — do not list the operator under "not in the language yet"); HTML templates in `.tyhp` (`<?=` checked
 >     `echo`) are use-freely; bare `<?` is not a short open tag; a **storage** section: absence is `?T = null`; `unset` of a local, typed instance property, or static property is TYHP4158 (do not list it under "not in the language yet"); array-offset `unset` and optional struct fields stay legal; TYHP4418 on every typed static of a class, trait, or anonymous class, including `?T` and `mixed`; TYHP4419 after construction; a declaration initializer counts when a subclass replaces `__construct`; a promoted parameter counts only when its constructor runs; `parent::__construct` or `: parent(...)` must run on every path to the end and every `return`; a class with no constructor runs the nearest ancestor constructor, including a trait constructor (do not write that a missing constructor skips the parent); "use the PHP form instead"
 >     table (include readonly property defaults below 8.6 → `TYHP4378`, enum `__debugInfo()` below 8.6
 >     → `TYHP4379`, other enum magic methods → `TYHP4024`); "not in the language yet" list (`internal` **is** in the language — omit from published
@@ -315,7 +326,7 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 > 29. PHP-mapping reference table (`<?= expr ?>` in `.tyhp` → `echo expr;`; a lossy signature also
 >     emits a PHPStan/Psalm tag under `emit.docblocks`; source `type X = …` → factory `function X(): \Tyhp\Type`;
 >     hints still expand; tyhpdef aliases inline unless `#[\Tyhp\GenericRuntime(aliasFactory: …)]`;
->     a layout-2 call emits `name(types)(args)`; `#[\Tyhp\InferGeneric]` bare call stays plain and explicit type arguments emit `name__tyhpGeneric`; PHP `Box::new(T::int)(42)` / `Box::type(T::int)`; a foreign class `new` still emits `Generic::bind`; PHP `await(async(...))` and `$promise->wait()`).
+>     a layout-2 call emits `name(types)(args)`; `#[\Tyhp\InferGeneric]` bare call stays plain and explicit type arguments emit `name__tyhpGeneric`; PHP `Box::new(T::int)(42)` / `Box::type(T::int)`; a foreign class `new` still emits `Generic::bind`; PHP `await(async(...))` and `$promise->wait()`; `default(Class)` with `operator default` → `Class::__tyhpDefault()`, otherwise `null`).
 > 30. PHP version gating: `declare(php="…")` (alone in that declare; file `;` vs `{ }` block);
 >     `#[\Tyhp\Php]` (illegal on `struct`/`extension`); Composer constraints vs `output.phpVersion`
 >     (unset → `8.2` + TYHP4306); disjoint same-name variants; `output.phpVersion` is the minimum PHP; gates that hold for only some versions at or above it emit `\PHP_VERSION_ID` checks, `declare(ext)` emits `\extension_loaded`.
@@ -351,6 +362,9 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >   (TYHP4419); a class with no constructor runs the nearest ancestor constructor; array-offset
 >   `unset` and an optional struct field stay legal; `→ guide/22-declarations.md`,
 >   `guide/08-typed-locals.md`, `guide/28-availability-gotchas.md`.
+>   The operator-overloading line includes `operator default(): self`. The compile-time helpers line
+>   says a class or enum that declares it makes `default(ThatType)` that instance, and one that does
+>   not makes null.
 >   Frame it as "PHP plus additions" — no compile-target/erasure detail there. Public tagline is
 >   **typed superset of the PHP language** (not “strongly typed”). Locals lead with `$x = …`.
 > - `AGENTS.md` (+ `CLAUDE.md` pointing to it): entry point; how to load section-by-section, and the
@@ -392,10 +406,10 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 > `tyhpdef/php` + `tyhpdef/php-ext-*` and overlays;
 > library authors fill `extra.tyhp.require`, never put author-only tyhpdefs in extras;
 > first `composer require tyhp/core` miss → `composer update` / `tyhp composer sync`);
-> fuller worked examples (extension, operator overload,
+> fuller worked examples (extension, operator overload including `operator default(): self`,
 > `using`/`:=`, `with`, guards, async+cancellation); and a runtime API signature reference (Promise,
 > Deferred, EventLoop, CancellationToken(Source), Contracts, DisposableScope, Decimal, Type,
-> Exceptions, Expression). `handbook/08-rhetoric.md` is the `tyhp/rhetoric` package: the Tyhp material (models, contexts, queries, save, mapping, migrations, scaffold, Eloquent queries, `Sql::fn`) and a distinct PHP section a PHP developer can open without the Tyhp language pages. PHP samples call binder-first methods as `name(types)(args)` (`table(Post::class)()`, `model(Post::class)()`, `belongsTo(Blog::class)($path)`, `transaction(T::int)($fn)`, `ContextFactory::new(Context::class)()`, `EloquentQuery::query(Model::class)()`), call `entry($model)` and `\Tyhp\Expression::of` / `\_expr` as ordinary methods, and build trees with `\Tyhp\Expression::of` / `\Tyhp\Expr`. `\Tyhp\Generic::bind($target, T::int)` and `\_gnrc($target, T::int)` are for a class or callable chosen at runtime. Keep that file when regenerating; do not fold it into `07-runtime-api.md`. Verify every tooling claim against `../tyhp/Tyhp/CLI/**`, `../tyhp/Tyhp/Config/**`, the
+> Exceptions, Expression). `Type::defaultValue()` on a class, enum, or generic class calls that type's own public static `__tyhpDefault()` when that exact type declares it and returns null when the method is only inherited or absent; hand-written PHP may declare the method. `handbook/08-rhetoric.md` is the `tyhp/rhetoric` package: the Tyhp material (models, contexts, queries, save, mapping, migrations, scaffold, Eloquent queries, `Sql::fn`) and a distinct PHP section a PHP developer can open without the Tyhp language pages. PHP samples call binder-first methods as `name(types)(args)` (`table(Post::class)()`, `model(Post::class)()`, `belongsTo(Blog::class)($path)`, `transaction(T::int)($fn)`, `ContextFactory::new(Context::class)()`, `EloquentQuery::query(Model::class)()`), call `entry($model)` and `\Tyhp\Expression::of` / `\_expr` as ordinary methods, and build trees with `\Tyhp\Expression::of` / `\Tyhp\Expr`. `\Tyhp\Generic::bind($target, T::int)` and `\_gnrc($target, T::int)` are for a class or callable chosen at runtime. Keep that file when regenerating; do not fold it into `07-runtime-api.md`. Verify every tooling claim against `../tyhp/Tyhp/CLI/**`, `../tyhp/Tyhp/Config/**`, the
 > emitter, and `../tyhp-runtime-src/packages/**` — **prefer each package's `.tyhpdef` for public signatures**, and
 > mark unimplemented behavior ⚠️ rather than describing the story's intent as fact.
 

@@ -24,7 +24,7 @@
 | `decimal` (hint) | `\Tyhp\Decimal` |
 | symbol-name / template / string types | `string` |
 | `nameof(x)` | `'x'` |
-| `default(int)` | `0` (`''`/`false`/`[]`/`null` by type) |
+| `default(int)` | `0` (`''`/`false`/`[]`/`null` by type). A class or enum with `operator default` → `ThatType::__tyhpDefault()`; without it, `null` |
 | `typeof(T)` | `\Tyhp\Type::…()`; source alias → `Alias()` / `Optional(\Tyhp\Type::int())` |
 | `fn(...): $v is T` | `: bool` |
 | `async function f(): T` | `function f(): \Tyhp\Promise { return \Tyhp\Promise::_async(...); }` |

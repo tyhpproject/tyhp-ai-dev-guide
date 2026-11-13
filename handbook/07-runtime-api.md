@@ -163,7 +163,7 @@ never() array() object() callable() iterable() resource()`, plus `union(self ...
 `isType<T>(mixed $v): $value is T` (type guard), `check(mixed $v, self $t): void`,
 `compatible(self $broad, self $narrow): bool`, `awaited(self $t): self` (runtime form of `__Awaited<T>`: unwraps
 `Promise` layers, member-wise over unions; a bare `Promise` becomes `mixed`). Instance: `asReadOnly()/asNullable()/asNonNullable()`,
-`defaultValue(): mixed` (what `default(T)` produces), `genericParameter(string $name): ?NamedType`,
+`defaultValue(): mixed` (what `default(T)` produces; a class, enum, or generic class type calls its own public static `__tyhpDefault()` when that exact type declares it, each call, and returns null when the method is only inherited or absent; hand-written PHP may declare the method), `genericParameter(string $name): ?NamedType`,
 `getKind(): string` (`scalar|class|union|intersection|generic|struct|objectShape|callableShape|named`),
 `getName(): ?string`, `isNullable(): bool`, `isReadOnly(): bool`, `__toString()`.
 `union`/`intersection` throw `InvalidTypeException` with fewer than two distinct members.

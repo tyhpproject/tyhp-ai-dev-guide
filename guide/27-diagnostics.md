@@ -19,6 +19,7 @@ underlines; `--quiet` is one line. Unknown names may include a **did you mean**.
 | `TYHP4158` | `unset` of a local, a typed instance property, or a static property — assign `null` on a `?T` |
 | `TYHP4418` | typed static property has no initializer (`?T` and `mixed` included) |
 | `TYHP4419` | typed instance property is not initialized after construction |
+| `TYHP4420`–`TYHP4426` | `operator default`: return not `self` / a parameter / a second declaration / disallowed target / `default` of the same type / constructor-parameter cycle / reserved `__tyhpDefault` |
 | `TYHP4021` | assign to `readonly` property |
 | `TYHP4025` | member visibility violation |
 | `TYHP4028` | `await` / `using await` outside async code |

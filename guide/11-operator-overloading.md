@@ -14,7 +14,8 @@ class Money {
 - Binary: 2 params, ≥1 `self`. Unary: 1 `self`. Comparisons → `bool`; `<=>` → `int`. `convert` is
   type conversion.
 - Overloadable: `+ - * / % **`, unary `+ - ++ -- ~ !`, bitwise `& | ^ << >>`, `.`, `< <= > >= == !=
-  === !== <=>`, word `empty`, `convert`. **`true`, `false`, and `null` operators do not exist** —
+  === !== <=>`, word `empty`, `convert`, and `operator default(): self` ([below](#operator-default)).
+  **`true`, `false`, and `null` operators do not exist** —
   express truthiness with `operator convert(self): bool` and emptiness with `operator empty`.
 
 ### How it compiles
@@ -26,7 +27,8 @@ class Money {
   `is_string`/`is_bool`/`is_array` for builtins). An unaccepted combination throws
   `\Tyhp\Exceptions\InvalidParametersForOperatorOverloadException`.
 - The generated name is **reserved**: declaring `operator +` forbids a hand-written `__add`
-  (compile-time error). Reservation only applies when the operator is declared.
+  (compile-time error). For those operators, reservation applies when the operator is declared.
+  `__tyhpDefault` is reserved in any letter case, declared operator or not (TYHP4426).
 - All forms of a given operator must be **mutually distinguishable** by operand type (compile-time
   error otherwise), so the collapsed dispatch never silently decides.
 - `convert` may not be self→self.
@@ -51,6 +53,9 @@ Convert-to target → auto-added interface (merged with existing `implements`):
 (`BoolConvertible`), `int`→`__toInt` (`IntConvertible`), `float`→`__toFloat` (`FloatConvertible`),
 `decimal`→`__toDecimal` (`DecimalConvertible`). Any other type `T` → `__to{FormattedT}()` with base
 `\Tyhp\Contracts\Convertible`.
+
+### operator default
+A class or enum declares `operator default(): self` with no parameters, at most once. The body is static. `default(ThatType)`, `default(self)`, and `default(static)` then have that type and call `ThatType::__tyhpDefault()` (`public static function __tyhpDefault(): static`). Each call runs the body. The call is not a constant (TYHP4090). Without the operator, including on a subclass, the result is null and is a constant. Not allowed on an interface, abstract class, trait, extension, or as an abstract operator (TYHP4423). Direct `default` of the same type in the body is TYHP4424; omitting a constructor parameter whose default is `default` of that type is TYHP4425. Hand-written PHP may declare that method; `\Tyhp\Type::defaultValue()` calls it only when that exact type declares it. `default(T)` for a generic parameter goes through `defaultValue()`. Full rules: [§17](17-compile-time-helpers.md).
 
 ### Call-site rewriting (all static, except convert-to casts)
 - Binary `$a + $b` resolves **left operand first**: `\TypeA::__add($a, $b)` if `typeof($a)` has a
