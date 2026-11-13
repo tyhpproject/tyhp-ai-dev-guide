@@ -40,6 +40,10 @@ function array_find(array $array, callable $callback): mixed;
   no generated PHP). A parameter a mapping writes must be declared `&`.
   Class/interface/trait properties may be hooked as a bodyless `{ get; set; }` / `{ &get; }` list
   (no `get { }` / `get =>`; one `$name`; `#[\Tyhp\Php]` on the property, not the hook — `TYHP8016`).
+  A `.tyhpdef` may document a PHP static property with no default (`public static string $name;`).
+  TYHP4418 and TYHP4419 are checks on `.tyhp` declarations. Calling a tyhpdef constructor, or
+  inheriting it by declaring none, counts for that stub's typed instance properties that have
+  no initializer. A stub chain that declares no constructor has nothing to call.
 - `deprecated`/`obsolete` are keywords (not docblocks); checker warns on use.
 - `extends` on an imported function's first param = extension-method import.
 - Inline `.tyhpdef` class-body members are thin `=>` mappings only (no brace bodies, no generated

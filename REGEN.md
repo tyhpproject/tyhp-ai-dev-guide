@@ -83,7 +83,7 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >    HTML). `if (…):` / `endif;` and `foreach (…):` / `endforeach;` lower to braces. `source.tagless`
 >    forbids `?>`, so a template is a tagged file (first 6 characters `<?tyhp` in a tagless project).
 >    Capture with `\ob_start()` / `\ob_get_clean()`.
-> 3. The two strict rules: non-nullable by default (a possibly null receiver must be narrowed before
+> 3. The two strict rules: non-nullable by default (absence is `?T` assigned `null`; `unset` of a local, a typed instance property, or a static property is TYHP4158; array-offset `unset` stays legal; a possibly null receiver must be narrowed before
 >    `->` property/method access or struct/object indexing — TYHP4198; `?->` / `??` are the
 >    shorthands; a `?->` chain's value is nullable, later links in the same chain skip with it);
 >    conditions must be `bool`; narrowing resets on reassignment.
@@ -117,7 +117,9 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >    `\Generator` declared-return shapes, `ArrayAccess<K,V>` / `ArrayAccessShape`, Traversable
 >    implements rule, alias return-constraint propagation.
 > 8. Typed locals (erased; only params/props/returns keep spelled types). Lead examples with inferred
->    `$x = …`; `int $x = …` when inference is not enough.
+>    `$x = …`; `int $x = …` when inference is not enough. A typed local may omit the initializer;
+>    a read before assignment is TYHP4014. `unset` of a local is TYHP4158; drop the value with
+>    `?T` and `= null`. `unset($items[$i])` stays legal.
 > 9. Type aliases (hints expand to the underlying PHP type; source `.tyhp` aliases emit a
 >    `\Tyhp\Type` factory — `UserId()`, `Optional(typeof(int))` / `typeof(Optional<int>)`;
 >    `Optional<int>()` is invalid; `use App\Types\UserId;` stays class-kind, emitted PHP is
@@ -141,7 +143,8 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >     `clone $s with`, `$s with`); emit spread as `\array_replace` (remaining defaults, then each spread
 >     and each run of keyed entries), not PHP `[...$src]`, so integer keys survive; `new Name[...] with [...]`
 >     is an error — one list; dereference with `(new Point[…])->x`; property access lowers to arrays; PHP
->     sees `array`; no runtime shape check; anon/`clone` gotchas).
+>     sees `array`; no runtime shape check; `unset` of an optional field is legal (array-backed);
+>     `unset` of a class property is TYHP4158; anon/`clone` gotchas).
 > 11. Operator overloading (class + shorthand + `convert`; arity/`self` rules; overloadable set;
 >     left-first resolution; synthetic-method lowering).
 > 12. Extensions (block target `extension Name extends Type` or nested `extends Type { }` / `extends<T> Type { }`; `$this` implied, `&$this` only when by-ref; `self` is the block target including scalars; unions legal when every receiver alternative is a union member; header generics stay on the extension symbol; three member forms: `=>` omits the
@@ -174,7 +177,7 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >     Narrowing table incl. loose `!=`/`==` null; if-arm early exit (also with `else`); `\assert($c);`;
 >     `switch (true)` / `match (true)` earlier-arm negation; what does not narrow; property reads
 >     `$this->p` / `$obj->p` / nested `$a->b->c` / `self::$p` / `Foo::$p` narrow like variables,
->     assign/`unset` clears the path and sub-paths, method-call results do not). Closure/Fiber
+>     assignment clears the path and sub-paths, method-call results do not). Closure/Fiber
 >     generic shapes: `as`, not `is`.
 > 17. Compile-time helpers (`nameof(User::$name)` is `__PropertyName<User>` and a constant
 >     expression, so an attribute parameter of that type accepts it and rejects a name that is
@@ -232,10 +235,31 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >     the invoked declaration (interface/abstract callees do not warn; overrides do not inherit
 >     unless marked; literal `$message`; `(void)` suppresses; not gated on phpVersion);
 >     `#[\DelayedTargetValidation]` ≥ 8.5 skips TARGET (4127) for Core attributes on that
->     declaration, not functional checks; everything else identical to PHP — say so
->     explicitly).
+>     declaration, not functional checks; **initialized storage**: `unset` of a local, typed
+>     instance property, or static property is TYHP4158 (`?T = null` drops the value; array-offset
+>     `unset` and an optional struct field stay legal); every typed static on a class, trait, or
+>     anonymous class needs an initializer (TYHP4418), including `?T` and `mixed`; a `.tyhpdef`
+>     may document a PHP static with no default; interface properties, enums, and statics of a
+>     readonly class are not TYHP4418; after construction every typed instance storage property
+>     is initialized (TYHP4419; TYHP4157 is the read); a declaration initializer counts when a
+>     subclass replaces `__construct`; a promoted parameter counts only when its constructor runs
+>     (an inherited promoted parameter with a default does not, if the child does not run that
+>     constructor); `parent::__construct` or `: parent(...)` counts only on every path to the end
+>     and every `return` (one `if` arm does not cover the other; `throw` abandons the object; a
+>     helper or closure does not count; direct `$this->prop =` does); a class with no constructor
+>     runs the nearest ancestor constructor, including a trait constructor PHP would import, and
+>     a grandchild that also declares none is the same; a private ancestor property is named on
+>     the child constructor when skipping the parent would leave it uninitialized, and a private
+>     property with a declaration initializer does not need that call; trait properties are checked
+>     on each using class; hooked properties are not TYHP4419; calling a tyhpdef constructor, or
+>     inheriting it by declaring none, counts for that stub's uninitialized typed instance
+>     properties, and a tyhpdef chain with no constructor is not asked for; an anonymous class is
+>     `class@anonymous`; everything else identical to PHP — say so explicitly).
 > 23. `.tyhpdef` declaration files (what's declarable, including hooked class/interface/trait
->     properties as bodyless `{ get; set; }` / `{ &get; }`; class-body `type`; `deprecated`/`obsolete`; `extends` import;
+>     properties as bodyless `{ get; set; }` / `{ &get; }`; a static property may omit a default
+>     (TYHP4418 and TYHP4419 are `.tyhp` checks; calling or inheriting a tyhpdef constructor counts
+>     for that stub's typed instance properties with no initializer; a stub chain with no constructor
+>     has nothing to call); class-body `type`; `deprecated`/`obsolete`; `extends` import;
 >     inline + standalone `extension { fn … => …; }` as thin mappings only — no brace bodies, no
 >     generated PHP; a written parameter must be `&`; compiled libraries copy in-package `global use`; `hide`/`insteadof`; `#[\Tyhp\GenericRuntime]` stamps every emitted generic (`erased`/`layouts`; helpers optional); PHP gates;
 >     harvested enums may keep `implements \UnitEnum` / `\BackedEnum`;
@@ -278,16 +302,16 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >     first `composer require tyhp/core` often misses that transaction), `allow-plugins.tyhp/core`, and the 8.2–8.5 `output.phpVersion` lint/build
 >     matrix.
 > 27. Diagnostics: `TYHP4xxx` codes, error/warning/info, checker continues after errors (cap
->     100/file), common-codes table (include `TYHP4121` empty `catch` → name `$e` and `(void)$e`;
+>     100/file), common-codes table (include `TYHP4014` read before assignment, `TYHP4157` uninitialized property read, `TYHP4158` `unset` of a local or property, `TYHP4418` static property without an initializer, `TYHP4419` instance property not initialized after construction, `TYHP4121` empty `catch` → name `$e` and `(void)$e`;
 >     a comment-only body still warns; `TYHP4500` deprecated use; `TYHP4129` / `TYHP4339` Override;
 >     `TYHP4165` NoDiscard unused return); note there is no dedicated unknown-member / arg-count error.
 > 28. Availability & gotchas: "use freely" list (property hooks polyfill on 8.2–8.3, native on 8.4+;
 >     `&get` needs 8.4; **`tyhp/core` scalar catalog is use-freely** — `$s->length()` with no import);
->     "annotate don't assume" (arrays/params/returns); HTML templates in `.tyhp` (`<?=` checked
->     `echo`) are use-freely; bare `<?` is not a short open tag; "use the PHP form instead"
+>     "annotate don't assume" (arrays/params/returns; a typed local may omit its initializer, TYHP4014 on a read); HTML templates in `.tyhp` (`<?=` checked
+>     `echo`) are use-freely; bare `<?` is not a short open tag; a **storage** section: absence is `?T = null`; `unset` of a local, typed instance property, or static property is TYHP4158 (do not list it under "not in the language yet"); array-offset `unset` and optional struct fields stay legal; TYHP4418 on every typed static of a class, trait, or anonymous class, including `?T` and `mixed`; TYHP4419 after construction; a declaration initializer counts when a subclass replaces `__construct`; a promoted parameter counts only when its constructor runs; `parent::__construct` or `: parent(...)` must run on every path to the end and every `return`; a class with no constructor runs the nearest ancestor constructor, including a trait constructor (do not write that a missing constructor skips the parent); "use the PHP form instead"
 >     table (include readonly property defaults below 8.6 → `TYHP4378`, enum `__debugInfo()` below 8.6
 >     → `TYHP4379`, other enum magic methods → `TYHP4024`); "not in the language yet" list (`internal` **is** in the language — omit from published
->     `package.tyhpdef`). **Derive strictly from the current code.**
+>     `package.tyhpdef`; storage `unset` is an error, not a missing feature). **Derive strictly from the current code.**
 > 29. PHP-mapping reference table (`<?= expr ?>` in `.tyhp` → `echo expr;`; a lossy signature also
 >     emits a PHPStan/Psalm tag under `emit.docblocks`; source `type X = …` → factory `function X(): \Tyhp\Type`;
 >     hints still expand; tyhpdef aliases inline unless `#[\Tyhp\GenericRuntime(aliasFactory: …)]`;
@@ -321,6 +345,12 @@ The content is authored as two logical documents (the **guide**, ~31 sections, a
 >   Never hardcode line numbers.
 > - `00-index.md` in each folder: the shared intro/legend + a list of the section files.
 > - `QUICK_GUIDE.md` / `SKILL.md`: one line per feature, cross-language analogy, `→` naming the exact file(s).
+>   Under "Declarations", include an **Initialized storage** line: `unset` of a local, a typed instance
+>   property, or a static property is TYHP4158 (`?T = null` drops the value); a typed static needs an
+>   initializer (TYHP4418); every typed instance storage property is initialized after construction
+>   (TYHP4419); a class with no constructor runs the nearest ancestor constructor; array-offset
+>   `unset` and an optional struct field stay legal; `→ guide/22-declarations.md`,
+>   `guide/08-typed-locals.md`, `guide/28-availability-gotchas.md`.
 >   Frame it as "PHP plus additions" — no compile-target/erasure detail there. Public tagline is
 >   **typed superset of the PHP language** (not “strongly typed”). Locals lead with `$x = …`.
 > - `AGENTS.md` (+ `CLAUDE.md` pointing to it): entry point; how to load section-by-section, and the

@@ -1,7 +1,8 @@
 ## 10. Structs
 
 Structural value type = "typed associative array": **typed properties only, no methods**, → PHP
-`array`. PHP callers see `array`; there is no runtime shape check.
+`array`. PHP callers see `array`; there is no runtime shape check. `unset` of an optional
+field removes that array key and is legal. `unset` of a class property is TYHP4158.
 
 ```tyhp
 type Point = struct { int $x = 0; int $y = 0; ?string $label; };   // nullable prop may omit default

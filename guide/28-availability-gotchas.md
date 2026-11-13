@@ -12,7 +12,22 @@ the target is older); object shapes (`type Name = object { … }`) and `__New<T>
 in a `.tyhp` file (`<?= expr ?>` is a checked `echo`, no escaping — [§2](02-files-and-tags.md)).
 
 **Annotate, don't assume:** every parameter/property and return type — locals infer from
-initializers (including array literals).
+initializers (including array literals). A typed local may omit its initializer; a read
+before assignment is TYHP4014.
+
+**Storage is initialized.** Absence is `?T = null` (or a domain empty value). `unset` of a
+local, a typed instance property, or a static property is TYHP4158. Array-offset `unset`
+(`unset($items[$i])`, `unset($obj->items[$key])`) stays legal, and so does `unset` of an
+optional struct field. Every typed static property on a class, trait, or anonymous class
+needs an initializer (TYHP4418), including `?T` and `mixed`. After construction, every typed
+instance storage property is initialized (TYHP4419); a read before that is TYHP4157. A
+declaration initializer counts when a subclass replaces `__construct`. A promoted parameter
+counts only when the constructor that declares it runs. `parent::__construct(...)` or
+`: parent(...)` counts only when it runs on every path to the end and on every `return`.
+One arm of `if` does not cover the other. `throw` abandons the object. A helper or a closure
+does not count. A class that declares no constructor runs the nearest ancestor constructor,
+including a trait constructor PHP would import. Hooked properties are not the TYHP4419 check.
+Details: [§22](22-declarations.md).
 
 **Use the PHP form instead:**
 

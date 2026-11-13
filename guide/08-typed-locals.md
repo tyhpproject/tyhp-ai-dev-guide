@@ -9,3 +9,6 @@ for ($i = 0; $i < $n; $i++) {}
 ```
 Only params, properties, and return types keep a spelled PHP type. Locals lead with `$var = …`;
 `Type $var = …` stays legal when there is no initializer or you need a wider type.
+A typed local may omit the initializer (`string $s;`). A read before assignment is TYHP4014.
+`unset` of a local is TYHP4158. Drop the value with `?string $s = …; $s = null;`.
+`unset($items[$i])` still removes an array element.

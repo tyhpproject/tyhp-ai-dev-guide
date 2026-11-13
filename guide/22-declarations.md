@@ -54,8 +54,41 @@ Classes, interfaces, traits, enums, visibility, and members are **the same as PH
     lists the declared signatures. Editor hover/signature help show the declared signatures.
 - **Trait property alias** adds a Tyhp form renaming a *property*: `use T { $prop as $renamed; }`
   (PHP only aliases methods).
-- Typed properties, constructor promotion, `abstract`/`final`/`readonly`/`static`,
-  `&`-return, enum backing types/cases, trait `insteadof`/`as` (methods): **identical to PHP**.
+- `abstract`/`final`/`readonly`, `&`-return, enum backing types/cases, and trait
+  `insteadof`/`as` (methods) match PHP. Constructor promotion matches PHP, with the
+  initialization rules below.
+- **Initialized storage.** Absence is `?T = null` (or a domain empty value).
+  `unset` of a local, a typed instance property, or a static property is TYHP4158.
+  Array-offset `unset` (`unset($items[$i])`, `unset($obj->items[$key])`) stays legal.
+  `unset` of an optional struct field stays legal because a struct is an array.
+  Every typed static property on a class, trait, or anonymous class needs an initializer
+  (TYHP4418), including `?T` and `mixed` (`public static ?string $name = null`).
+  A `.tyhpdef` may document a PHP static with no default. An interface property, an enum,
+  and a static of a readonly class are not TYHP4418.
+  After construction, every typed instance storage property is initialized (TYHP4419).
+  Reading one that is not is TYHP4157. Hooked properties are not this check. Statics are
+  TYHP4418, not TYHP4419.
+  A declaration initializer counts even when a subclass replaces `__construct`.
+  A promoted parameter counts only when the constructor that declares it runs. An inherited
+  promoted parameter, even with a default, does not count when the child replaces
+  `__construct` and does not run the parent constructor.
+  `parent::__construct(...)` or `: parent(...)` counts only when it runs on every path that
+  reaches the end of the child constructor and on every `return` that leaves it. A call on
+  one arm of `if` does not cover the other. `throw` abandons the object. A call inside a
+  helper or a closure does not count. Direct `$this->prop =` in the constructor counts.
+  A class that declares no `__construct` runs the nearest ancestor constructor, including a
+  trait constructor PHP would import. A further descendant that also declares none runs that
+  same constructor. The diagnostic is reported on the class whose constructor falls short.
+  A private ancestor property is not assigned by the child. When skipping the parent
+  constructor would leave it uninitialized, TYHP4419 names it on the child constructor.
+  A private property with a declaration initializer does not need that call.
+  A property a trait introduces is checked on each using class. An initializer on the trait
+  property is a declaration guarantee.
+  Calling a `.tyhpdef` constructor, or inheriting it by declaring none, counts for that
+  stub's typed instance properties that have no initializer. A `.tyhpdef` type whose stub
+  chain declares no constructor has nothing to call, so a subclass that replaces
+  `__construct` is not asked to initialize its properties. An anonymous class is named
+  `class@anonymous`.
 - **Class-level `const`:** a type is required on the original declaration (PHP 8.3 typed class
   constants). A child redeclaration may omit the type and inherits it invariantly from that
   ancestor; changing the type is an error.
