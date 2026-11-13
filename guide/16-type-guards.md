@@ -46,7 +46,7 @@ Not narrowed: truthiness, after reassignment, loose `==`/`!=` against anything b
 
 Property reads narrow like variables, including nested paths and static properties of any class
 (`$this->prop`, `$obj->prop`, `$obj->a->b`, `$this->a->b`, `self::$prop`, `Foo::$prop`):
-`if ($order->customer !== null) { $order->customer->name; }`. Assigning or `unset()`-ing a path
+`if ($order->customer !== null) { $order->customer->name; }`. Assigning a path
 ends its narrowing and the narrowing of every path under it (`$a->b = …` also clears `$a->b->c`).
 A method call result is not narrowed by checking it — assign it to a variable, then check the variable.
 

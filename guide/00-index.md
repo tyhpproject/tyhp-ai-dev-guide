@@ -39,3 +39,4 @@
 - `28-availability-gotchas.md` — availability gotchas
 - `29-php-mapping.md` — php mapping
 - `30-php-version-gating.md` — php version gating
+- `31-lazy-objects.md` — lazy objects

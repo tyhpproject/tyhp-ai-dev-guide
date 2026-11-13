@@ -11,11 +11,16 @@ $conn := new DbConnection();   // `:=` = disposable local, disposed when its enc
 ```
 `:=` is block-scoped: at function level it is disposed when the function returns; inside an `if`/loop block it is
 disposed when that block ends (each loop iteration, and on `return`/`break`/exception), before outer resources.
-`using` → try/finally:
+`using` → try/finally. When `output.phpVersion` is 8.4 or newer:
 ```php
 $h = new FileHandle();
-try { /* body */ } finally { if ($h instanceof \Tyhp\Contracts\IsDisposable) { $h->dispose(); } }
+try { /* body */ } finally {
+    if ($h instanceof \Tyhp\Contracts\IsDisposable && !(new \ReflectionClass($h))->isUninitializedLazyObject($h)) {
+        $h->dispose();
+    }
+}
 ```
+Below that floor the guard is `$h instanceof \Tyhp\Contracts\IsDisposable && !(\PHP_VERSION_ID >= 80400 && (new \ReflectionClass($h))->isUninitializedLazyObject($h))`, so an 8.2-floor build still skips a ghost on PHP 8.4+. The guard does not call `\Tyhp\Lazy::isLazy` (the 8.2 build of that method is constant `false`). An initialized object still disposes. `using await` applies the same check to both the `AsyncIsDisposable` arm and the sync fallback. Function-level `:=` still emits `\Tyhp\DisposableScope`; `disposeAll` and `\Tyhp\DisposableHelper::dispose` skip with the same test (`call_user_func`, because the PHP 8.2 reflection signatures omit the method). → [§31](31-lazy-objects.md).
 `using await` → the same try/finally with `_await($c->disposeAsync())` for `AsyncIsDisposable` (else `dispose()`).
 Function-level `:=` → `$__scope_N = \Tyhp\DisposableScope::create(); $conn = $__scope_N->using(new DbConnection());`.
 A `:=` in a nested block → the same try/finally as `using`, around the rest of that block.

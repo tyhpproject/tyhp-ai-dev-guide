@@ -34,8 +34,10 @@ extensions are `tyhpdef/php-ext-*` (`composer require --dev tyhpdef/php-ext-curl
 that exist only when the extension package is absent use `declare(ext="!curl")` around
 `fallback function` / `fallback const`. Scalar methods
 (`$s->length()`) come from `tyhp/core` and need no import. A compiled Tyhp library's `package.tyhpdef`
-is the same Tyhp surface as its source: `#[\Tyhp\GenericRuntime]` is stamped on every emitted generic;
-foreign sites use `\Tyhp\Generic::bind`. `internal` symbols are omitted.
+is the same Tyhp surface as its source: `#[\Tyhp\GenericRuntime]` is stamped on every emitted generic.
+A foreign layout-2 call emits `name(types)(args)`. A foreign class `new` emits `\Tyhp\Generic::bind`.
+An `#[\Tyhp\InferGeneric]` call with explicit type arguments emits the `name__tyhpGeneric` companion.
+`internal` symbols are omitted.
 `tyhpdef/php-ext-decimal` is PECL Decimal, not `tyhp/decimal`.
 json/hash/libxml stay in `tyhpdef/php`. Anything unknown, declare it in a `.tyhpdef`. To stub a
 Composer package or unpublished PHP extension:
@@ -91,6 +93,14 @@ brands; trait, used-trait, and struct name brands are `string`; a function-name 
 Parentheses keep a union unambiguous: `(callable(int): string)|null`, `callable(): (int|string)`,
 `callable(int): ?string` for a `string|null` return. Public property hooks lowered below PHP 8.4
 also get `@property` / `@property-read` / `@property-write`.
+
+**PHP that calls `tyhp/lambda`.** Build the tree with `_expr` / `Expression::of` and `_path` /
+`PropertyPath::on`. Ship that fluent form. A package cannot know whether a later process has `ext-tyhp`
+loaded, or which version is loaded. The fluent form is the recommended one for speed and stability
+whether or not the module is installed. A caller who knows the process has `tyhp` at `0.1.0` or newer
+may pass a closure. That is the easier spelling in that case. `tyhp build` still emits the `backedBy`
+chain for an inline `fn`. `ext-tyhp` is not required. Installing it is recommended: `pie install tyhp/ext-tyhp`.
+No Tyhp package requires it. `tyhp/core`, `tyhp/lambda`, and `tyhp/io` suggest it.
 
 ```tyhp
 <?tyhp

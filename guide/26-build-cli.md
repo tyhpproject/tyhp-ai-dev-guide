@@ -25,8 +25,9 @@
 - **Library `"type": "library"`:** always writes `package.tyhpdef` and additive-merges `extra.tyhp.package` into
   publish-directory `composer.json` (`build.generateTyhpdef` ignored). Applications write `package.tyhpdef` only if
   `build.generateTyhpdef: true` (no `extra.tyhp.package`). Generated `package.tyhpdef` keeps attributes, class-level `type`,
-  in-package `global use`, and `#[\Tyhp\GenericRuntime]` on every emitted generic (foreign sites
-  use `\Tyhp\Generic::bind`; `factory`/`binder` names are not baked into consumer PHP).
+  in-package `global use`, and `#[\Tyhp\GenericRuntime]` on every emitted generic (a foreign
+  layout-2 call emits `name(types)(args)`; a foreign class `new` uses `\Tyhp\Generic::bind`, so the
+  class `factory` name is not baked into consumer PHP).
   `internal` is omitted. Author-only `require-dev` owners become name-only `extern`;
   `extra.tyhp.require` and runtime `require` owners stay FQNs.
 - **`extra.tyhp.require`:** library map of ambient Composer packages for consumers (any name;

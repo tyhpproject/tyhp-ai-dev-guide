@@ -13,7 +13,13 @@ underlines; `--quiet` is one line. Unknown names may include a **did you mean**.
 | `TYHP4010` | argument not assignable to parameter |
 | `TYHP4015` | value possibly null where non-null required |
 | `TYHP4198` | property, method call, or struct/object index on a possibly null receiver — narrow it or use `?->` |
+| `TYHP4014` | variable possibly undefined — declared, not assigned on every path to the read |
 | `TYHP4016` | variable needs a type annotation or inferable initializer |
+| `TYHP4157` | read of a typed instance property that is not initialized |
+| `TYHP4158` | `unset` of a local, a typed instance property, or a static property — assign `null` on a `?T` |
+| `TYHP4418` | typed static property has no initializer (`?T` and `mixed` included) |
+| `TYHP4419` | typed instance property is not initialized after construction |
+| `TYHP4420`–`TYHP4426` | `operator default`: return not `self` / a parameter / a second declaration / disallowed target / `default` of the same type / constructor-parameter cycle / reserved `__tyhpDefault` |
 | `TYHP4021` | assign to `readonly` property |
 | `TYHP4025` | member visibility violation |
 | `TYHP4028` | `await` / `using await` outside async code |
@@ -40,6 +46,8 @@ underlines; `--quiet` is one line. Unknown names may include a **did you mean**.
 | `TYHP4141` | in-place `with` on a readonly property |
 | `TYHP4400` | readonly `new … with` or `clone … with` when `output.phpVersion` is below 8.3 |
 | `TYHP4401` | `clone … with` on a `readonly class` when `output.phpVersion` is below 8.5 |
+| `TYHP4402` | `lazy new` of an internal class other than `\stdClass`, a class that extends one, or a non-class |
+| `TYHP4403` | warning: `lazy new` of a class with no stored instance property runs the constructor immediately |
 | `TYHP4300`–`TYHP4306` | PHP version gates ([§30](30-php-version-gating.md)) |
 | `TYHP4307` | `.tyhp` used an `extern` name (type / function / const) |
 | `TYHP4326` | user type listed `\Traversable`; use `\Iterator` or `\IteratorAggregate` |

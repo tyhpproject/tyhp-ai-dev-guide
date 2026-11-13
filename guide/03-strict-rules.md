@@ -1,6 +1,9 @@
 ## 3. Two rules that break PHP habits
 
-**Non-nullable by default** — add `?`/`|null` explicitly:
+**Non-nullable by default** — add `?`/`|null` explicitly. Absence is `?T` assigned `null`.
+`unset` of a local, a typed instance property, or a static property is TYHP4158.
+Array-offset `unset` stays legal. Initialization rules are in [§8](08-typed-locals.md) and
+[§22](22-declarations.md).
 ```tyhp
 string $n = null;    // ERROR
 ?string $n = null;   // OK
